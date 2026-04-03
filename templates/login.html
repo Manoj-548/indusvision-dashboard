@@ -1,14 +1,55 @@
 {% extends 'base.html' %}
+{% block title %}IndusVision Login{% endblock %}
 {% block content %}
 <div class="row justify-content-center mt-5">
-    <div class="col-md-5">
+    <div class="col-md-6 col-lg-4">
         <div class="card shadow-sm">
             <div class="card-body">
                 <h3 class="card-title mb-4">IndusVision Login</h3>
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
                 <form method="post" novalidate>
                     {% csrf_token %}
-                    {{ form.as_p }}
-                    <button type="submit" class="btn btn-primary w-100">Sign in</button>
+                    <div class="mb-3">
+                        <label for="{{ form.username.id_for_label }}" class="form-label">User ID</label>
+                        {{ form.username }}
+                        {% if form.username.errors %}
+                            <div class="text-danger">
+                                {{ form.username.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.password.id_for_label }}" class="form-label">Password</label>
+                        {{ form.password }}
+                        {% if form.password.errors %}
+                            <div class="text-danger">
+                                {{ form.password.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input class="form-check-input" type="radio" name="register" id="login" value="0" checked>
+                        <label class="form-check-label" for="login">
+                            Login
+                        </label>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input class="form-check-input" type="radio" name="register" id="register" value="1">
+                        <label class="form-check-label" for="register">
+                            Create New Account
+                        </label>
+                    </div>
+                    {% if register %}
+                    <div class="mb-3">
+                        <label for="{{ form.password2.id_for_label }}" class="form-label">Confirm Password</label>
+                        {{ form.password2 }}
+                    </div>
+                    {% endif %}
+                    <button type="submit" class="btn btn-primary w-100">{% if register %}Create & Sign In{% else %}Sign In{% endif %}</button>
                 </form>
             </div>
         </div>

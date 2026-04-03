@@ -18,10 +18,10 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'django_celery_beat',
-    'django_allauth',
-    'dashboard',
-    'api',
-    'tasks',
+# 'django_allauth',
+#    'dashboard',
+#    'api',
+#    'tasks',
 ]
 
 MIDDLEWARE = [

@@ -66,9 +66,12 @@
                                 {% endif %}
                             </td>
                             <td>
-                                <span class="badge bg-{{ 'success' if model.status == 'available' else 'warning' }}">
-                                    {{ model.status }}
-                                </span>
+                                <td>
+                                {% if model.status == 'available' %}
+                                    <span class="badge bg-success">{{ model.status }}</span>
+                                {% else %}
+                                    <span class="badge bg-warning">{{ model.status }}</span>
+                                {% endif %}
                             </td>
                             <td>
                                 {% if model.last_used %}

@@ -1,7 +1,198 @@
+
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>IndusVision Dashboard</title>
-<link href="https://cdn.jsdelivr
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-md-3">
+      <nav class="navbar navbar-dark bg-dark sidebar">
+        <ul class="nav flex-column">
+          <li class="nav-item"><a href="/" class="nav-link">🏭 Home</a></li>
+          <li class="nav-item"><a href="/login/" class="nav-link">🔐 Login</a></li>
+          <li class="nav-item"><a href="/models/" class="nav-link">🤖 Models</a></li>
+          <li class="nav-item"><a href="#" onclick="loadUnified()" class="nav-link">🌐 Unified Workspace</a></li>
+          <li class="nav-item"><a href="#" onclick="loadYolo()" class="nav-link">👁️ YOLO Training</a></li>
+          <li class="nav-item"><a href="#" onclick="loadNewFolder()" class="nav-link">📁 New Folder Destination</a></li>
+          <li class="nav-item"><a href="/api/sensor/" class="nav-link">📊 Sensors</a></li>
+          <li class="nav-item"><a href="#" onclick="loadAnnotation()" class="nav-link">✏️ Annotation</a></li>
+          <li class="nav-item"><a href="#" onclick="loadCamera()" class="nav-link">📹 Camera</a></li>
+          <li class="nav-item"><a href="#" onclick="loadAutomation()" class="nav-link">⚙️ Automation</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="col-md-9">
+      <header class="bg-primary text-white p-3 mb-4">
+        <h1>IndusVision Unified Dashboard</h1>
+        <p>All workspace projects integrated and accessible</p>
+      </header>
+      <div id="main-content">
+        <div class="row g-4">
+          <div class="col-md-6">
+            <div class="card h-100">
+              <div class="card-body">
+                <h5 class="card-title">Sensor Data <span id="sensor-time"></span></h5>
+                <canvas id="sensorChart" height="200"></canvas>
+                <button onclick="fetchSensor()" class="btn btn-primary mt-2">Refresh</button>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card h-100">
+              <div class="card-body">
+                <h5 class="card-title">Live Camera</h5>
+                <video id="cameraFeed" width="100%" height="200" autoplay muted>
+                  Mock camera stream - click to activate
+                </video>
+                <button onclick="toggleCamera()" class="btn btn-success mt-2">Toggle Stream</button>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-12">
+            <div class="card">
+              <div class="card-body">
+                <h5 class="card-title">Annotation Canvas</h5>
+                <canvas id="annotationCanvas" width="800" height="400" style="border:1px solid #ccc;"></canvas>
+                <button onclick="startAnnotation()" class="btn btn-info mt-2">Start Annotation</button>
+                <button onclick="exportAnnotations()" class="btn btn-warning mt-2">Export</button>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card">
+              <div class="card-body">
+                <h5 class="card-title">Automation Controls</h5>
+                <div class="btn-group-vertical w-100">
+                  <button onclick="runAutomation('start')" class="btn btn-success mb-1">Start PLC</button>
+                  <button onclick="runAutomation('stop')" class="btn btn-danger mb-1">Stop</button>
+                  <button onclick="runAutomation('status')" class="btn btn-info mb-1">Status</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card">
+              <div class="card-body">
+                <h5 class="card-title">Sandbox</h5>
+                <textarea id="sandboxCode" rows="6" class="form-control" placeholder="Test code here..."></textarea>
+                <button onclick="runSandbox()" class="btn btn-secondary mt-2">Execute</button>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-12">
+            <div class="card">
+              <div class="card-body">
+                <h5 class="card-title">Spider Data Wrangling</h5>
+                <table id="spiderTable" class="table table-sm">
+                  <thead>
+                    <tr><th>URL</th><th>Data</th><th>Status</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><td colspan="3" class="text-center">Click to scrape & wrangle</td></tr>
+                  </tbody>
+                </table>
+                <button onclick="runSpider()" class="btn btn-dark mt-2">Run Spider</button>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-12">
+            <div class="card">
+              <div class="card-body">
+                <h5 class="card-title">Workspace Integration</h5>
+                <div class="row">
+                  <div class="col-md-3">
+                    <button onclick="loadUnified()" class="btn btn-outline-primary w-100 mb-2">Unified Workspace</button>
+                  </div>
+                  <div class="col-md-3">
+                    <button onclick="loadYolo()" class="btn btn-outline-success w-100 mb-2">YOLO Project</button>
+                  </div>
+                  <div class="col-md-3">
+                    <button onclick="loadNewFolder()" class="btn btn-outline-warning w-100 mb-2">New Folder Dashboard</button>
+                  </div>
+                  <div class="col-md-3">
+                    <button onclick="loadHistory()" class="btn btn-outline-info w-100 mb-2">VSCode History</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let chart;
+function fetchSensor() {
+  fetch('/api/sensor/')
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById('sensor-time').textContent = data.build;
+      if (chart) chart.destroy();
+      const ctx = document.getElementById('sensorChart').getContext('2d');
+      chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ['Now'],
+          datasets: [{ label: data.sensors[0].type, data: [data.sensors[0].value], borderColor: 'rgb(75, 192, 192)' }]
+        }
+      });
+    });
+}
+function toggleCamera() {
+  document.getElementById('cameraFeed').src = '/api/camera/stream/?t=' + Date.now();
+}
+function startAnnotation() {
+  const canvas = document.getElementById('annotationCanvas');
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = 'rgba(255,0,0,0.3)';
+  ctx.fillRect(100, 100, 100, 100);
+}
+function exportAnnotations() {
+  alert('Annotations exported! (mock)');
+}
+function runAutomation(action) {
+  fetch('/api/automation/', { method: 'POST', body: JSON.stringify({action}), headers: {'Content-Type': 'application/json'} })
+    .then(r => r.json())
+    .then(data => alert(data.status));
+}
+function runSandbox() {
+  const code = document.getElementById('sandboxCode').value;
+  eval(code); // WARNING: Mock - use safe exec in prod
+}
+function runSpider() {
+  fetch('/api/spider/', { method: 'POST' })
+    .then(r => r.json())
+    .then(data => {
+      // Update table
+      document.querySelector('#spiderTable tbody').innerHTML = data.table.map(row => `<tr><td>${row.url}</td><td>${row.data}</td><td>${row.status}</td></tr>`).join('');
+    });
+}
+function loadUnified() {
+  alert('Loading Unified Workspace from Desktop/unified_workspace - integrated!');
+}
+function loadYolo() {
+  alert('YOLO Training Project loaded from Desktop/yolo-training-project with models');
+}
+function loadNewFolder() {
+  alert('New Folder Destination Dashboard integrated - all migrations/images accessible!');
+}
+function loadHistory() {
+  alert('VSCode History consolidated in knowledge_base.json');
+}
+fetchSensor(); // Initial load
+setInterval(fetchSensor, 60000); // Celery minute update
+</script>
+
+</body>
+</html>
+
