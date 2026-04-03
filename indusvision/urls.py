@@ -23,6 +23,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('models/', lambda r: render(r, 'model_management.html'), name='models'),
     path('', login_view, name='login'),
+    path('login/', login_view, name='login_page'),
     path('dashboard/', dashboard_view, name='dashboard'),
     path('api/sensor/', api_sensor, name='api_sensor'),
     path('api/annotation/', api_sensor, name='api_annotation'),
@@ -30,3 +31,4 @@ urlpatterns = [
     path('api/automation/', api_sensor, name='api_automation'),
     path('api/sandbox/', api_sensor, name='api_sandbox'),
 ]
+

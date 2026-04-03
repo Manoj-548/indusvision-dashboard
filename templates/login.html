@@ -1,11 +1,12 @@
 {% extends 'base.html' %}
 {% block title %}IndusVision Login{% endblock %}
+{% block sidebar %}{% endblock %}
 {% block content %}
 <div class="row justify-content-center mt-5">
     <div class="col-md-6 col-lg-4">
         <div class="card shadow-sm">
             <div class="card-body">
-                <h3 class="card-title mb-4">IndusVision Login</h3>
+                <h3 class="card-title mb-4 text-primary transition-all" style="transition: all 0.3s ease;">IndusVision Login</h3>
                 {% if form.non_field_errors %}
                     <div class="alert alert-danger">
                         {{ form.non_field_errors }}
@@ -56,4 +57,5 @@
     </div>
 </div>
 {% endblock %}
+
 
