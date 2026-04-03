@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <h1>Model Management Dashboard</h1>
+        <p class="text-muted">Manage YOLO model weights, run detections, and monitor model performance.</p>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm bg-primary text-white">
+            <div class="card-body">
+                <h5 class="card-title">Total Models</h5>
+                <p class="card-text display-4">{{ stats.total }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm bg-success text-white">
+            <div class="card-body">
+                <h5 class="card-title">Available Models</h5>
+                <p class="card-text display-4">{{ stats.available }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Actions</h5>
+                <button class="btn btn-sm btn-primary" onclick="scanModels()">Scan for Models</button>
+                <button class="btn btn-sm btn-secondary" onclick="refreshTable()">Refresh</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <h2>Loaded Models</h2>
+        <div class="table-responsive">
+            <table class="table table-hover table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Model Name</th>
+                        <th>Type</th>
+                        <th>Classes</th>
+                        <th>Accuracy</th>
+                        <th>Status</th>
+                        <th>Last Used</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if models %}
+                        {% for model in models %}
+                        <tr>
+                            <td><strong>{{ model.name }}</strong></td>
+                            <td>{{ model.model_type }}</td>
+                            <td><span class="badge bg-info">{{ model.num_classes }}</span></td>
+                            <td>
+                                {% if model.accuracy > 0 %}
+                                    <span class="badge bg-success">{{ model.accuracy|floatformat:1 }}%</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if model.status == 'available' else 'warning' }}">
+                                    {{ model.status }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if model.last_used %}
+                                    {{ model.last_used|date:"Y-m-d H:i" }}
+                                {% else %}
+                                    <em>Never</em>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button class="btn btn-xs btn-primary" onclick="runDetection('{{ model.name }}')">Run Detection</button>
+                                <button class="btn btn-xs btn-info" onclick="viewDetails('{{ model.name }}')">Details</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">
+                                No models loaded. Click <strong>Scan for Models</strong> to discover available models.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Detection Form Modal -->
+<div class="modal fade" id="detectionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Run Detection</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="detectionForm">
+                    <div class="mb-3">
+                        <label for="modelSelect" class="form-label">Select Model</label>
+                        <select class="form-control" id="modelSelect" required>
+                            <option value="">Choose a model...</option>
+                            {% for model in models %}
+                                <option value="{{ model.name }}">{{ model.name }} ({{ model.model_type }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="imagePath" class="form-label">Image Path</label>
+                        <input type="text" class="form-control" id="imagePath" placeholder="e.g., /path/to/image.jpg" required>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted">Detection will run asynchronously. You'll receive a task ID to track progress.</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="submitDetection()">Run Detection</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function scanModels() {
+    if (confirm('Scan workspace for available models? This may take a moment.')) {
+        fetch('/api/models/scan_models/', { method: 'POST' })
+            .then(r => r.json())
+            .then(data => {
+                alert('Scan started (Task ID: ' + data.task_id + ')');
+                setTimeout(refreshTable, 2000);
+            })
+            .catch(e => alert('Error: ' + e));
+    }
+}
+
+function runDetection(modelName) {
+    document.getElementById('modelSelect').value = modelName;
+    const modal = new bootstrap.Modal(document.getElementById('detectionModal'));
+    modal.show();
+}
+
+function submitDetection() {
+    const model = document.getElementById('modelSelect').value;
+    const image = document.getElementById('imagePath').value;
+    
+    if (!model || !image) {
+        alert('Please select a model and image path');
+        return;
+    }
+    
+    fetch(`/api/models/${model}/run_detection/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+        body: JSON.stringify({ image_path: image })
+    })
+    .then(r => r.json())
+    .then(data => {
+        alert('Detection started!\nTask ID: ' + data.task_id);
+        bootstrap.Modal.getInstance(document.getElementById('detectionModal')).hide();
+        document.getElementById('detectionForm').reset();
+    })
+    .catch(e => alert('Error: ' + e));
+}
+
+function viewDetails(modelName) {
+    fetch(`/api/models/${modelName}/`)
+        .then(r => r.json())
+        .then(data => {
+            alert(`Model: ${data.name}\nType: ${data.model_type}\nClasses: ${data.num_classes}\nAccuracy: ${data.accuracy}%\nPath: ${data.path}`);
+        })
+        .catch(e => alert('Error: ' + e));
+}
+
+function refreshTable() {
+    location.reload();
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+
+<style>
+.btn-xs {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+</style>
+{% endblock %}

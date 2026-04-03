@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <h1>IndusVision Unified Operations Dashboard</h1>
+        <p class="text-muted">Live meter updates from annotation, automation, sandbox, spider, data wrangling, sensors, and camera.</p>
+    </div>
+</div>
+
+<div class="row g-3">
+    {% for item in summary %}
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title text-capitalize">{{ item.module }}</h5>
+                <p class="card-text">Value: <strong>{{ item.value }}</strong></p>
+                <p class="card-text">Status: <span class="badge bg-{{ 'success' if item.status == 'healthy' else 'secondary' }}">{{ item.status }}</span></p>
+                <p class="card-text"><small>Collected at {{ item.collected_at }}</small></p>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <h2>Source code inventory</h2>
+        <div class="mb-3">
+            <span class="badge bg-info">Total files: {{ total_files }}</span>
+            {% for item in file_type_counts %}
+                <span class="badge bg-secondary ms-1">{{ item.file_type }}: {{ item.count }}</span>
+            {% endfor %}
+        </div>
+        <table class="table table-hover table-striped">
+            <thead>
+                <tr><th>Path</th><th>Type</th><th>Lines</th><th>Size</th><th>Updated</th></tr>
+            </thead>
+            <tbody>
+                {% for f in source_files %}
+                <tr>
+                    <td>{{ f.path }}</td>
+                    <td>{{ f.file_type }}</td>
+                    <td>{{ f.line_count }}</td>
+                    <td>{{ f.size_bytes }}</td>
+                    <td>{{ f.last_updated }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <h2>Model Weights & Detections</h2>
+        <table class="table table-hover table-striped">
+            <thead>
+                <tr><th>Name</th><th>Type</th><th>Classes</th><th>Accuracy</th><th>Status</th><th>Last Used</th></tr>
+            </thead>
+            <tbody>
+                {% for model in model_weights %}
+                <tr>
+                    <td>{{ model.name }}</td>
+                    <td>{{ model.model_type }}</td>
+                    <td>{{ model.num_classes }}</td>
+                    <td>{{ model.accuracy|floatformat:2 }}%</td>
+                    <td><span class="badge bg-{{ 'success' if model.status == 'available' else 'warning' }}">{{ model.status }}</span></td>
+                    <td>{{ model.last_used|default:"Never" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <h2>Latest telemetry events</h2>
+        <table class="table table-hover table-striped">
+            <thead>
+                <tr><th>Time</th><th>Module</th><th>Value</th><th>Status</th><th>Info</th></tr>
+            </thead>
+            <tbody>
+                {% for r in metrics %}
+                <tr>
+                    <td>{{ r.collected_at }}</td>
+                    <td>{{ r.module }}</td>
+                    <td>{{ r.value }}</td>
+                    <td>{{ r.status }}</td>
+                    <td>{{ r.info.msg }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col text-end">
+        <a class="btn btn-outline-secondary" href="#" onclick="location.reload();">Reload</a>
+    </div>
+</div>
+
+{% endblock %}
