@@ -5,29 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% block title %}IndusVision{% endblock %}</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://indusvision.ai/wp-content/themes/astra/assets/css/minified/main.min.css?ver=4.8.8" rel="stylesheet">
 <style>
 html { scroll-behavior: smooth; }
 .transition-all:hover { transform: translateY(-1px); }
-</style>
-
-<style>
-:root {
-  --ast-global-color-0: #046bd2;
-  --ast-global-color-1: #045cb4;
-  --ast-global-color-2: #1e293b;
-  --ast-global-color-3: #334155;
-  --ast-global-color-4: #F0F5FA;
-  --ast-global-color-5: #FFFFFF;
-  --ast-global-color-6: #D1D5DB;
-  --ast-global-color-7: #111111;
-  --ast-global-color-8: #111111;
-}
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-.sidebar { background: var(--ast-global-color-2); min-height: 100vh; padding: 20px 0; }
-.card { border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-.btn-primary { background-color: var(--ast-global-color-0); border-color: var(--ast-global-color-0); }
-.btn-primary:hover { background-color: var(--ast-global-color-1); border-color: var(--ast-global-color-1); }
 </style>
 </head>
 <body>
@@ -35,7 +15,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
   <div class="container">
     <a class="navbar-brand" href="/">IndusVision.ai</a>
     <div class="navbar-nav ms-auto">
-      <a class="nav-link" href="/dashboard/">Dashboard</a>
+      <a class="nav-link" href="/dashboard/">Home</a>
       {% if user.is_authenticated %}
       <a class="nav-link" href="/admin/">Admin</a>
       <form method="post" action="/logout/" style="display: inline;">
@@ -54,15 +34,30 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
     <div class="col-md-2 bg-dark text-white p-3" style="min-height: calc(100vh - 76px);">
       <h6>Navigation</h6>
       <ul class="nav flex-column">
-
-        <li class="nav-item"><a class="nav-link text-white" href="/dashboard/">Home</a></li>
-        <li class="nav-item"><a class="nav-link text-white" href="/models/">Models</a></li>
-        <li class="nav-item"><a class="nav-link text-white" href="#" onclick="loadUnified()">Unified</a></li>
-        <li class="nav-item"><a class="nav-link text-white" href="/api/sensor/">Sensors</a></li>
-        <li class="nav-item"><a class="nav-link text-white" href="#">Camera</a></li>
-        <li class="nav-item"><a class="nav-link text-white" href="#">Annotation</a></li>
-        <li class="nav-item"><a class="nav-link text-white" href="#">Automation</a></li>
-
+        <li class="nav-item">
+          <a class="nav-link text-white" href="/dashboard/">Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link text-white" href="/dashboard/models/">Models</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link text-white" href="/dashboard/unified/">Unified</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link text-white" href="/api/sensor/">Sensors</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link text-white" href="/api/camera/">Camera</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link text-white" href="/api/annotation/">Annotation</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link text-white" href="/api/automation/">Automation</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link text-white" onclick="loadKnowledge()">Knowledge</a>
+        </li>
       </ul>
     </div>
     {% endblock %}
@@ -73,6 +68,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+function loadKnowledge() {
+  window.location.href = '/dashboard/#knowledge';
+}
+</script>
 {% block extra_js %}{% endblock %}
 </body>
 </html>

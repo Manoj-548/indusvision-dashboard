@@ -18,10 +18,10 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'django_celery_beat',
+    'dashboard',
+    'api',
+    'tasks',
 # 'django_allauth',
-#    'dashboard',
-#    'api',
-#    'tasks',
 ]
 
 MIDDLEWARE = [
@@ -103,3 +103,4 @@ CELERY_BEAT_SCHEDULE = {
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.AllowAny'],
 }
+

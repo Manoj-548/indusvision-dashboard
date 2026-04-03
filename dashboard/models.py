@@ -30,6 +30,8 @@ SOURCE_TYPE_CHOICES = [
     ('html', 'HTML'),
     ('index', 'Index'),
     ('other', 'Other'),
+    ('script', 'Script'),
+    ('doc', 'Documentation'),
 ]
 
 
@@ -41,6 +43,7 @@ class SourceFile(models.Model):
     last_updated = models.DateTimeField(null=True, blank=True)
     size_bytes = models.BigIntegerField(default=0)
     is_dashboard_relevant = models.BooleanField(default=True)
+    is_knowledge_relevant = models.BooleanField(default=False)
 
     class Meta:
         ordering = ['-last_updated', 'path']
@@ -65,3 +68,25 @@ class ModelWeights(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.model_type}) - {self.status}"
+
+
+KNOWLEDGE_TYPE_CHOICES = [
+    ('doc', 'Documentation'),
+    ('script', 'Script'),
+]
+
+
+class KnowledgeEntry(models.Model):
+    source_file = models.ForeignKey(SourceFile, on_delete=models.CASCADE, related_name='knowledge_entries')
+    knowledge_type = models.CharField(max_length=16, choices=KNOWLEDGE_TYPE_CHOICES, default='doc')
+    title = models.CharField(max_length=256)
+    content_preview = models.TextField(blank=True)
+    extracted_data = models.JSONField(default=dict, blank=True)
+    consolidated_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-consolidated_at']
+
+    def __str__(self):
+        return f"{self.title} ({self.knowledge_type}) from {self.source_file.path}"
+

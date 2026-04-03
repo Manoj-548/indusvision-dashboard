@@ -1,150 +1,107 @@
 #!/usr/bin/env python
 """
-Consolidate knowledge from all documentation files in the workspace.
-This script extracts key information from .md files and creates a unified knowledge base model.
+Consolidate knowledge from new_folder_destination doc_* and script_* files for IndusVision Dashboard.
+Supports Celery task integration with KnowledgeEntry model population.
 """
 
-import os
-import json
 from pathlib import Path
 from datetime import datetime
+import json
 from collections import defaultdict
 
-class KnowledgeConsolidator:
-    def __init__(self, root_path):
-        self.root_path = Path(root_path)
-        self.knowledge_base = {
-            'timestamp': datetime.now().isoformat(),
-            'modules': {},
-            'tools': {},
-            'apis': {},
-            'workflows': {},
-            'references': [],
-            'best_practices': [],
-        }
+def get_consolidation_root():
+    """Return path to new_folder_destination."""
+    base = Path(__file__).resolve().parent.parent  # ConsolidatedProjects
+    return base / "new_folder_destination"
+
+def extract_from_file(filepath):
+    """Extract structured information from doc/script file."""
+    extract = {
+        'file': str(filepath.name),
+        'path': str(filepath.relative_to(get_consolidation_root())),
+        'size': 0,
+        'title': '',
+        'content_preview': '',
+        'headers': [],
+        'code_blocks': {},
+        'sections': []
+    }
     
-    def extract_from_markdown(self, filepath):
-        """Extract structured information from markdown files."""
-        try:
-            with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
-                content = f.read()
-            
-            return {
-                'file': str(filepath.relative_to(self.root_path)),
-                'size': len(content),
-                'sections': self._extract_sections(content),
-                'headers': self._extract_headers(content),
-                'code_blocks': self._count_code_blocks(content),
-            }
-        except Exception as e:
-            return {'error': str(e)}
-    
-    def _extract_sections(self, content):
-        """Extract main sections from markdown."""
-        sections = []
+    try:
+        with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+            content = f.read()
+        extract['size'] = len(content)
+        
+        # Title from filename
+        filename = filepath.name
+        title = filename.replace('doc_', '').replace('script_', '').replace('.md', '').replace('.py', '').replace('.bat', '').replace('.ps1', '').title()
+        extract['title'] = title
+        
+        # Preview
+        extract['content_preview'] = content[:300] + '...' if len(content) > 300 else content
+        
+        # Headers and sections
         lines = content.split('\n')
         for i, line in enumerate(lines):
             if line.startswith('# '):
-                section = line[2:].strip()
-                sections.append({
-                    'title': section,
+                title = line[2:].strip()
+                extract['headers'].append(title)
+                extract['sections'].append({
+                    'title': title,
                     'line': i,
-                    'content_preview': '\n'.join(lines[i:min(i+10, len(lines))])[:200]
+                    'preview': line.strip()
                 })
-        return sections
-    
-    def _extract_headers(self, content):
-        """Extract all headers from markdown."""
-        headers = defaultdict(list)
-        lines = content.split('\n')
-        for i, line in enumerate(lines):
-            if line.startswith('#'):
-                level = len(line) - len(line.lstrip('#'))
-                title = line.lstrip('# ').strip()
-                headers[level].append(title)
-        return dict(headers)
-    
-    def _count_code_blocks(self, content):
-        """Count code blocks by language."""
+        
+        # Code blocks
         code_blocks = defaultdict(int)
-        lines = content.split('\n')
         i = 0
         while i < len(lines):
-            if lines[i].startswith('```'):
-                lang = lines[i][3:].strip() or 'unknown'
+            line = lines[i].strip()
+            if line.startswith('```'):
+                lang = line[3:].strip()
+                if not lang:
+                    lang = 'unknown'
                 code_blocks[lang] += 1
                 i += 1
-                while i < len(lines) and not lines[i].startswith('```'):
+                while i < len(lines) and not lines[i].strip().startswith('```'):
                     i += 1
             i += 1
-        return dict(code_blocks)
-    
-    def consolidate(self):
-        """Consolidate knowledge from all markdown files."""
-        doc_files = list(self.root_path.rglob('doc_*.md'))
-        doc_files += list(self.root_path.rglob('*KNOWLEDGE*.md'))
-        doc_files += list(self.root_path.rglob('*GUIDE*.md'))
-        doc_files += list(self.root_path.rglob('README.md'))
+        extract['code_blocks'] = dict(code_blocks)
         
-        for doc_file in set(doc_files):  # Use set to avoid duplicates
-            if doc_file.is_file():
-                info = self.extract_from_markdown(doc_file)
-                if 'error' not in info:
-                    self.knowledge_base['references'].append(info)
-        
-        return self.knowledge_base
+    except Exception as e:
+        extract['error'] = str(e)
     
-    def add_module_info(self, module_name, description, components):
-        """Add module information."""
-        self.knowledge_base['modules'][module_name] = {
-            'description': description,
-            'components': components,
-            'added_at': datetime.now().isoformat(),
-        }
-    
-    def save_to_json(self, output_path):
-        """Save consolidated knowledge to JSON."""
-        with open(output_path, 'w', encoding='utf-8') as f:
-            json.dump(self.knowledge_base, f, indent=2, default=str)
-        print(f"Knowledge base saved to {output_path}")
+    return extract
 
-
-def run_consolidation():
-    """Run the knowledge consolidation process."""
-    root = Path(__file__).parent.parent.parent  # Navigate to manoj folder
-    consolidator = KnowledgeConsolidator(root)
+def consolidate_knowledge():
+    """Consolidate and return list of extracts."""
+    root = get_consolidation_root()
+    if not root.exists():
+        return {'error': f'Path not found: {root}'}
     
-    # Add module information
-    modules = {
-        'annotation': 'Data annotation and labeling system for training datasets',
-        'automation': 'Automated workflow execution and task scheduling',
-        'sandbox': 'Safe environment for testing new features',
-        'spider': 'Web crawling and data extraction system',
-        'wrangling': 'Data cleaning and transformation tools',
-        'sensor': 'IoT and sensor data collection',
-        'camera': 'Live camera feed processing and recording',
+    extracts = []
+    
+    # Scan doc_* and script_* files
+    patterns = ['doc_*.md', 'script_*.py', 'script_*.bat', 'script_*.ps1']
+    for pattern in patterns:
+        for filepath in root.glob(pattern):
+            extract = extract_from_file(filepath)
+            if 'error' not in extract:
+                extracts.append(extract)
+    
+    kb = {
+        'timestamp': datetime.now().isoformat(),
+        'root_path': str(root),
+        'total_files': len(extracts),
+        'extracts': extracts
     }
-    
-    for module_name, description in modules.items():
-        consolidator.add_module_info(
-            module_name, 
-            description,
-            ['task processor', 'data model', 'API endpoint', 'dashboard widget']
-        )
-    
-    # Consolidate knowledge
-    kb = consolidator.consolidate()
-    
-    # Save results
-    output_path = Path(__file__).parent / 'knowledge_base.json'
-    consolidator.save_to_json(output_path)
-    
-    print(f"\nConsolidation complete!")
-    print(f"Total references found: {len(kb['references'])}")
-    print(f"Modules documented: {len(kb['modules'])}")
     
     return kb
 
-
 if __name__ == '__main__':
-    run_consolidation()
+    kb = consolidate_knowledge()
+    output_path = get_consolidation_root() / 'knowledge_base.json'
+    with open(output_path, 'w') as f:
+        json.dump(kb, f, indent=2, default=str)
+    print(f"Consolidated {kb['total_files']} knowledge items to {output_path}")
+

@@ -5,3 +5,5 @@ redis==5.0.8
 python-dotenv==1.0.1
 django-cors-headers==4.4.0
 django-allauth==65.1.0
+PyYAML==6.0.2
+
