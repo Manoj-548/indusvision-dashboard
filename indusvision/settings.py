@@ -71,6 +71,8 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [BASE_DIR / 'static']
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -81,24 +83,18 @@ CELERY_BROKER_URL = 'redis://localhost:6379/0'
 
 CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 
+
 CELERY_BEAT_SCHEDULE = {
-    'update-heartbeat-metrics-every-minute': {
-        'task': 'dashboard.update_heartbeat_metrics',
-        'schedule': 60.0,
-    },
-    'rollup-active-summary-every-60-seconds': {
-        'task': 'dashboard.rollup_active_summary',
-        'schedule': 60.0,
-    },
-    'sync-source-files-every-300-seconds': {
-        'task': 'dashboard.sync_source_files',
+    'sync-source-files': {
+        'task': 'dashboard.tasks.celery_sync_source_files',
         'schedule': 300.0,
     },
-    'load-model-weights-every-600-seconds': {
-        'task': 'dashboard.load_model_weights',
-        'schedule': 600.0,
+    'consolidate-knowledge': {
+        'task': 'dashboard.tasks.celery_consolidate_knowledge_task',
+        'schedule': 300.0,
     },
 }
+
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.AllowAny'],

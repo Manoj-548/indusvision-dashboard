@@ -70,3 +70,53 @@ def api_automation(request):
         return JsonResponse({'status': 'running'})
     return JsonResponse({'automation_status': 'idle'})
 
+
+@login_required
+def knowledge(request):
+    query = request.GET.get('q', '')
+    from django.db.models import Count, Q
+
+    knowledge_entries = KnowledgeEntry.objects.all()
+    if query:
+        knowledge_entries = knowledge_entries.filter(
+            Q(title__icontains=query) | Q(source_file__path__icontains=query) | Q(content_preview__icontains=query)
+        )
+    knowledge_entries = knowledge_entries.order_by('-consolidated_at')[:50]
+    stats = KnowledgeEntry.objects.aggregate(
+        total=Count('id'),
+        docs=Count('id', filter=Q(knowledge_type='doc')),
+        scripts=Count('id', filter=Q(knowledge_type='script'))
+    )
+    sources = SourceFile.objects.filter(is_knowledge_relevant=True).order_by('-last_updated')[:20]
+    context = {
+        'knowledge_entries': knowledge_entries,
+        'stats': stats,
+        'sources': sources,
+        'query': query,
+    }
+    return render(request, 'knowledge.html', context)
+
+@login_required
+def knowledge(request):
+    from django.db.models import Count, Q
+    query = request.GET.get('q', '')
+    knowledge_entries = KnowledgeEntry.objects.all()
+    if query:
+        knowledge_entries = knowledge_entries.filter(
+            Q(title__icontains=query) | Q(source_file__path__icontains=query) | Q(content_preview__icontains=query)
+        )
+    knowledge_entries = knowledge_entries.order_by('-consolidated_at')[:50]
+    stats = knowledge_entries.aggregate(
+        total=Count('id'),
+        docs=Count('id', filter=Q(knowledge_type='doc')),
+        scripts=Count('id', filter=Q(knowledge_type='script'))
+    )
+    sources = SourceFile.objects.filter(is_knowledge_relevant=True).order_by('-last_updated')[:20]
+    context = {
+        'knowledge_entries': knowledge_entries,
+        'stats': stats,
+        'sources': sources,
+        'query': query,
+    }
+    return render(request, 'knowledge.html', context)
+

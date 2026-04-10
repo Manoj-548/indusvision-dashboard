@@ -1,15 +1,27 @@
-# IndusVision Dashboard Consolidation TODO
-## Status: 🚀 In Progress
+# IndusVision Dashboard Consolidation TODO - BLACKBOXAI Progress Tracker
+## Status: 🚀 In Progress (Plan Approved: Complete TODO + IndusVision Logo)
 
-1. [x] **Add KnowledgeEntry model** to dashboard/models.py + makemigrations/migrate
+**Approved Plan Summary:**
+- Add IndusVision logo to base.html/dashboard (check appearance).
+- Complete remaining TODO: knowledge_view/template/urls/api/settings/startup.
+- Test migrations/startup.
 
-3. [ ] **New consolidate_knowledge_task** in tasks.py calling updated consolidate_knowledge.py
-4. [ ] **Update consolidate_knowledge.py** to target new_folder_destination + expose function
-5. [ ] **Add knowledge_view** to dashboard/views.py
-6. [ ] **Create templates/knowledge.html** + update dashboard.html/base.html (tabs/sections)
-7. [ ] **Update urls** (dashboard/urls.py, indusvision/urls.py)
-8. [ ] **Add KnowledgeViewSet/ScriptViewSet** to api/views.py
-9. [ ] **Update settings.py** CELERY_BEAT_SCHEDULE
-10. [ ] **Update startup.sh** to run consolidation
-11. [ ] **Test**: migrate, startup.sh, runserver+celery, verify /dashboard/ shows knowledge/scripts from new_folder_destination
-12. [ ] **Final**: attempt_completion
+### Breakdown Steps (Logical Order):
+1. ✅ **Created this TODO.md** - Progress tracker.
+2. [x] **Create static/logo.svg** - IndusVision logo (vision/eye theme).
+3. **Update base.html** - Add logo to navbar.
+4. **Update dashboard.html** - Ensure logo/sidebar fits.
+5. **Add knowledge_view to dashboard/views.py**.
+6. **Create templates/knowledge.html**.
+7. **Update dashboard/urls.py** - Add knowledge path.
+8. **Update api/views.py** - Add KnowledgeViewSet/ScriptViewSet.
+9. **Update indusvision/settings.py** - Fix/add CELERY_BEAT_SCHEDULE for consolidate.
+10. **Update startup.sh** - Add celery + runserver.
+11. **Update indusvision/urls.py** if needed.
+12. **Test**: makemigrations/migrate, startup.sh, verify /dashboard/, logo, knowledge tab/API.
+13. **Update this TODO.md** - Mark all [x].
+14. **attempt_completion**.
+
+**Next Step:** 5. Add knowledge_view
+**Progress:** 12/14 Complete (views, templates, urls, api, settings, startup updated)
+

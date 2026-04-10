@@ -1,12 +1,22 @@
 from django.urls import path, include
 from django.http import JsonResponse
 from rest_framework.routers import DefaultRouter
-from .views import ModelWeightsViewSet, MetricRecordViewSet, SourceFileViewSet
+from .views import (
+    ModelWeightsViewSet, 
+    MetricRecordViewSet, 
+    SourceFileViewSet, 
+    KnowledgeViewSet, 
+    ScriptViewSet
+)
 
 router = DefaultRouter()
-router.register(r'models', ModelWeightsViewSet)
-router.register(r'metrics', MetricRecordViewSet)
-router.register(r'sources', SourceFileViewSet)
+
+# Added 'basename' to each registration to prevent naming conflicts
+router.register(r'models', ModelWeightsViewSet, basename='modelweights')
+router.register(r'metrics', MetricRecordViewSet, basename='metrics')
+router.register(r'sources', SourceFileViewSet, basename='sourcefile')
+router.register(r'knowledge', KnowledgeViewSet, basename='knowledge')
+router.register(r'scripts', ScriptViewSet, basename='scripts')
 
 urlpatterns = [
     path('', include(router.urls)),

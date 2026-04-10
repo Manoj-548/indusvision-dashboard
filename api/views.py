@@ -2,7 +2,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.utils import timezone
-from dashboard.models import MetricRecord, SourceFile, ModelWeights
+from dashboard.models import MetricRecord, SourceFile, ModelWeights, KnowledgeEntry
 # from dashboard.tasks import load_model_weights, run_model_detection
 
 
@@ -69,5 +69,32 @@ class SourceFileViewSet(viewsets.ReadOnlyModelViewSet):
         """List source files."""
         qs = self.queryset[:50]
         data = [{'path': f.path, 'file_type': f.file_type, 'line_count': f.line_count} for f in qs]
+        return Response(data)
+
+class KnowledgeViewSet(viewsets.ReadOnlyModelViewSet):
+    """API ViewSet for KnowledgeEntry."""
+    queryset = KnowledgeEntry.objects.all().order_by('-consolidated_at')
+    
+    def list(self, request):
+        """List knowledge entries."""
+        qs = self.queryset[:50]
+        data = [{
+            'id': k.id,
+            'title': k.title,
+            'type': k.knowledge_type,
+            'source_path': k.source_file.path,
+            'preview': k.content_preview[:200],
+            'consolidated_at': k.consolidated_at.isoformat() if k.consolidated_at else None
+        } for k in qs]
+        return Response(data)
+
+class ScriptViewSet(viewsets.ReadOnlyModelViewSet):
+    """API ViewSet for scripts (SourceFile filter)."""
+    queryset = SourceFile.objects.filter(file_type='script').order_by('-last_updated')
+    
+    def list(self, request):
+        """List scripts."""
+        qs = self.queryset[:30]
+        data = [{'path': s.path, 'line_count': s.line_count, 'last_updated': s.last_updated.isoformat() if s.last_updated else None} for s in qs]
         return Response(data)
 

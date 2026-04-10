@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block title %}Knowledge - IndusVision{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+  <div class="col-md-12">
+    <h2>Knowledge Base <small class="text-muted">({{ stats.total }})</small></h2>
+    <form method="get" class="mb-3">
+      <div class="input-group">
+        <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Search knowledge, files, content...">
+        <button class="btn btn-primary" type="submit">Search</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="row mb-4">
+  <div class="col-md-3">
+    <div class="card text-white bg-primary">
+      <div class="card-body">
+        <h5>Docs</h5>
+        <h2>{{ stats.docs }}</h2>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-white bg-success">
+      <div class="card-body">
+        <h5>Scripts</h5>
+        <h2>{{ stats.scripts }}</h2>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header">
+        <h5>Knowledge Entries</h5>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Type</th>
+                <th>Source</th>
+                <th>Preview</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for ke in knowledge_entries %}
+              <tr>
+                <td><strong>{{ ke.title }}</strong></td>
+                <td><span class="badge bg-{% if ke.knowledge_type == 'doc' %}primary{% else %}success{% endif %}">{{ ke.knowledge_type|upper }}</span></td>
+                <td>{{ ke.source_file.path|truncatechars:50 }}</td>
+                <td>{{ ke.content_preview|truncatechars:100 }}</td>
+                <td>{{ ke.consolidated_at|date:"M d Y H:i" }}</td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="5" class="text-center text-muted">No knowledge entries. Run sync and consolidate.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header">
+        <h5>Recent Sources</h5>
+      </div>
+      <div class="card-body">
+        <ul class="list-group list-group-flush">
+          {% for source in sources %}
+          <li class="list-group-item d-flex justify-content-between">
+            {{ source.path|truncatechars:40 }}
+            <span class="badge bg-info">{{ source.file_type }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+if ('{{ query }}') {
+  console.log('Active search: {{ query }}');
+}
+</script>
+{% endblock %}
