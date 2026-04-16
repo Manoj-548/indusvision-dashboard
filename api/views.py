@@ -2,13 +2,13 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.utils import timezone
-from dashboard.models import MetricRecord, SourceFile, ModelWeights, KnowledgeEntry
+from dashboard.models import SourceFile, KnowledgeEntry
 # from dashboard.tasks import load_model_weights, run_model_detection
 
 
 class ModelWeightsViewSet(viewsets.ModelViewSet):
     """API ViewSet for managing model weights and running detections."""
-    queryset = ModelWeights.objects.all()
+    queryset = []  # ModelWeights not available
     lookup_field = 'name'
     
     def get_serializer_data(self, obj):
@@ -26,7 +26,7 @@ class ModelWeightsViewSet(viewsets.ModelViewSet):
     
     def list(self, request):
         """List all available model weights."""
-        models = ModelWeights.objects.order_by('-last_used')
+        models = []
         data = [self.get_serializer_data(m) for m in models]
         return Response({
             'count': len(data),
@@ -46,13 +46,13 @@ class ModelWeightsViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def stats(self, request):
         """Get model statistics."""
-        total_models = ModelWeights.objects.count()
+        total_models = 0
         return Response({'total': total_models})
 
 
 class MetricRecordViewSet(viewsets.ReadOnlyModelViewSet):
     """API ViewSet for querying metric records."""
-    queryset = MetricRecord.objects.all().order_by('-collected_at')
+    queryset = []  # MetricRecord not available
     
     def list(self, request):
         """List recent metrics."""
@@ -73,7 +73,7 @@ class SourceFileViewSet(viewsets.ReadOnlyModelViewSet):
 
 class KnowledgeViewSet(viewsets.ReadOnlyModelViewSet):
     """API ViewSet for KnowledgeEntry."""
-    queryset = KnowledgeEntry.objects.all().order_by('-consolidated_at')
+    queryset = KnowledgeEntry.objects.all().order_by('-created_at')
     
     def list(self, request):
         """List knowledge entries."""

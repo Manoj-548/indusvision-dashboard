@@ -5,7 +5,8 @@ from .tasks import sync_source_files, consolidate_knowledge_task
 from django.http import JsonResponse, StreamingHttpResponse
 from django.views.decorators.http import require_http_methods
 from django.db.models import Count, Q
-from .models import MetricRecord, SourceFile, ModelWeights, KnowledgeEntry, Workspace, Project, Image, Annotation, AnnotationTask
+from .models import SourceFile, KnowledgeEntry
+from dashboard.models_annotation import Workspace, Project, Image, Annotation, AnnotationTask
 # from .tasks import sync_source_files, consolidate_knowledge_task  # Use dashboard sync btn
 import subprocess
 import socket
@@ -34,7 +35,7 @@ def start_tensorboard_process():
             with open(pid_file, 'r') as f:
                 pid = int(f.read().strip())
             os.kill(pid, 0)  # check if alive
-        except (ValueError, OSError):
+        except (ValueValue, OSError):
             os.remove(pid_file)
         else:
             return {'status': 'already_running'}
@@ -79,8 +80,8 @@ def get_ai_status():
 
 @login_required
 def home(request):
-    latest_metrics = MetricRecord.objects.order_by('-collected_at')[:14]
-    knowledge_docs = KnowledgeEntry.objects.filter(knowledge_type='doc').order_by('-consolidated_at')[:10]
+    latest_metrics = []  # MetricRecord not defined
+    knowledge_docs = KnowledgeEntry.objects.filter(knowledge_type='doc').order_by('-created_at')[:10]
     scripts = SourceFile.objects.filter(file_type='script').order_by('-last_updated')[:10]
     knowledge_stats = KnowledgeEntry.objects.aggregate(
         total=Count('id'),
@@ -89,7 +90,7 @@ def home(request):
     ) or {'total': 0, 'docs': 0, 'scripts': 0}
     file_type_counts = SourceFile.objects.values('file_type').annotate(count=Count('id'))
     total_files = SourceFile.objects.count()
-    model_weights = ModelWeights.objects.all()[:10]
+    model_weights = []  # ModelWeights not available
     projects = Project.objects.order_by('-created_at')[:6]
     project_count = Project.objects.count()
     
@@ -163,7 +164,7 @@ def knowledge(request):
         knowledge_entries = knowledge_entries.filter(
             Q(title__icontains=query) | Q(source_file__path__icontains=query) | Q(content_preview__icontains=query)
         )
-    knowledge_entries = knowledge_entries.order_by('-consolidated_at')[:50]
+    knowledge_entries = knowledge_entries.order_by('-created_at')[:50]
     stats = KnowledgeEntry.objects.aggregate(
         total=Count('id'),
         docs=Count('id', filter=Q(knowledge_type='doc')),
@@ -183,7 +184,7 @@ from .rag import rag_agent
 import json
 import time
 from django.http import StreamingHttpResponse
-from .models import MetricRecord
+# from .models import MetricRecord
 
 @login_required
 @require_http_methods(["GET", "POST"])
@@ -358,5 +359,4 @@ def project_update(request, project_id):
         return JsonResponse({'message': 'Project updated successfully'})
 
     return redirect('project_detail', project_id=project.id)
-
 

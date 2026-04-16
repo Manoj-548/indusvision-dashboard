@@ -14,7 +14,7 @@ from chromadb import PersistentClient
 chroma_db_path = "chroma_db"
 
 embed_model = HuggingFaceEmbedding(model_name="sentence-transformers/all-MiniLM-L6-v2")
-llm = Ollama(model="llama3.2:1b", base_url="http://localhost:11434", request_timeout=120.0, num_ctx=2048, num_predict=256)  # Ultra low-memory: llama3.2:1b (~1GB RAM usage)
+llm = Ollama(model="qwen2.5-coder:3b", base_url="http://localhost:11434", request_timeout=120.0, num_ctx=4096, num_predict=512)  # qwen2.5-coder:3b BEST coder model
 
 def get_index():
     chroma_client = PersistentClient(path=chroma_db_path)
