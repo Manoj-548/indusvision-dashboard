@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block title %}Annotations - IndusVision{% endblock %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-md-2">
+      <!-- Sidebar from base -->
+    </div>
+    <div class="col-md-10 p-4">
+      <h1>Annotations Dashboard</h1>
+      
+      <div class="row mb-4">
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header">
+              <h5>Annotation Classes</h5>
+            </div>
+            <div class="card-body">
+              <ul class="list-group">
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                  Person
+                  <span class="badge bg-success">150</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                  Car
+                  <span class="badge bg-primary">320</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                  Truck
+                  <span class="badge bg-info">89</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header">
+              <h5>Stats</h5>
+            </div>
+            <div class="card-body">
+              <p>Total Images: 2,456</p>
+              <p>Annotated: 1,234 (50%)</p>
+              <p>Avg Labels/Image: 3.2</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header d-flex justify-content-between">
+          <h5>Recent Images</h5>
+          <button class="btn btn-primary btn-sm" onclick="loadNext()">Load More</button>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <img src="{% static 'logo.png' %}" class="img-fluid border rounded" alt="Image 1" style="height: 200px; object-fit: cover;">
+              <div class="mt-2">
+                <span class="badge bg-success me-1">Car</span>
+                <span class="badge bg-primary">Person</span>
+              </div>
+            </div>
+            <!-- More images -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function loadNext() {
+  // Fetch next batch
+}
+</script>
+{% endblock %}

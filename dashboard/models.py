@@ -90,3 +90,5 @@ class KnowledgeEntry(models.Model):
     def __str__(self):
         return f"{self.title} ({self.knowledge_type}) from {self.source_file.path}"
 
+from .models_annotation import Workspace, Project, Image, Annotation, AnnotationTask
+

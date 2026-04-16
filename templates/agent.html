@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% block title %}RAG Agent - IndusVision{% endblock %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-md-2">
+      <!-- Sidebar from base.html -->
+    </div>
+    <div class="col-md-10 p-4">
+      <h1>RAG Agent Chat</h1>
+      <p>Query your knowledge base with LangChain + LlamaIndex.</p>
+      
+      <div id="chat-container" style="height: 70vh; overflow-y: auto; border: 1px solid #ddd; padding: 20px; margin-bottom: 20px; background: #f8f9fa;">
+        <div id="messages"></div>
+      </div>
+      
+      <div class="input-group">
+        <textarea id="query" class="form-control" rows="3" placeholder="Ask about code, docs, scripts..."></textarea>
+        <button id="send-btn" class="btn btn-primary">Send</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const messages = document.getElementById('messages');
+const queryInput = document.getElementById('query');
+const sendBtn = document.getElementById('send-btn');
+
+sendBtn.addEventListener('click', sendQuery);
+queryInput.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter' && e.ctrlKey) sendQuery();
+});
+
+function addMessage(role, content) {
+  const div = document.createElement('div');
+  div.className = `mb-3 ${role === 'user' ? 'text-end' : ''}`;
+  div.innerHTML = `<div class="d-inline-block p-3 rounded ${role === 'user' ? 'bg-primary text-white' : 'bg-light'}" style="max-width: 80%;">${content}</div>`;
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+function sendQuery() {
+  const query = queryInput.value.trim();
+  if (!query) return;
+
+  addMessage('user', query);
+  queryInput.value = '';
+  sendBtn.disabled = true;
+
+const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken');
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+fetch('/dashboard/agent/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'X-CSRFToken': csrftoken
+    },
+    body: `query=${encodeURIComponent(query)}`
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.error) {
+      addMessage('assistant', `<strong>Error:</strong> ${data.error}`);
+    } else {
+      addMessage('assistant', data.response);
+    }
+  })
+  .catch(e => addMessage('assistant', `<strong>Error:</strong> Network error`))
+  .finally(() => sendBtn.disabled = false);
+}
+</script>
+{% endblock %}

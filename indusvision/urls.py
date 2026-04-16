@@ -1,6 +1,5 @@
 from django.contrib import admin
 from django.urls import path, include
-from django.shortcuts import render
 from .views import dashboard_view, login_view
 
 urlpatterns = [
@@ -10,4 +9,3 @@ urlpatterns = [
     path('dashboard/', include('dashboard.urls')),
     path('api/', include('api.urls')),
 ]
-

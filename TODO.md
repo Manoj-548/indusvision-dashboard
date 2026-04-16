@@ -1,27 +1,51 @@
-# IndusVision Dashboard Consolidation TODO - BLACKBOXAI Progress Tracker
-## Status: 🚀 In Progress (Plan Approved: Complete TODO + IndusVision Logo)
+# IndusVision Dashboard - Run Server & Optimization TODO
 
-**Approved Plan Summary:**
-- Add IndusVision logo to base.html/dashboard (check appearance).
-- Complete remaining TODO: knowledge_view/template/urls/api/settings/startup.
-- Test migrations/startup.
+## Phase 1: Run Server with IndusVision_WorkBook
+- [x] 1. Run setup_dev_env.ps1 to configure environment
+- [x] 2. CD to project directory  
+- [x] 3. Run python manage.py migrate (if needed)
+- [x] 4. Run python manage.py collectstatic --noinput
+- [x] 5. Start Django server with WorkBook Python
+- [x] 6. Verify server at http://localhost:8000
 
-### Breakdown Steps (Logical Order):
-1. ✅ **Created this TODO.md** - Progress tracker.
-2. [x] **Create static/logo.svg** - IndusVision logo (vision/eye theme).
-3. **Update base.html** - Add logo to navbar.
-4. **Update dashboard.html** - Ensure logo/sidebar fits.
-5. **Add knowledge_view to dashboard/views.py**.
-6. **Create templates/knowledge.html**.
-7. **Update dashboard/urls.py** - Add knowledge path.
-8. **Update api/views.py** - Add KnowledgeViewSet/ScriptViewSet.
-9. **Update indusvision/settings.py** - Fix/add CELERY_BEAT_SCHEDULE for consolidate.
-10. **Update startup.sh** - Add celery + runserver.
-11. **Update indusvision/urls.py** if needed.
-12. **Test**: makemigrations/migrate, startup.sh, verify /dashboard/, logo, knowledge tab/API.
-13. **Update this TODO.md** - Mark all [x].
-14. **attempt_completion**.
+## Phase 2: Environment Cleanup (Consolidate & Free Space)
+- [ ] 1. Identify all .venv directories across workspace (use cleanup_venvs.bat?)
+- [ ] 2. Keep only IndusVision_WorkBook, remove others
+- [ ] 3. Run cleanup_venvs.bat if applicable
 
-**Next Step:** 5. Add knowledge_view
-**Progress:** 12/14 Complete (views, templates, urls, api, settings, startup updated)
+## Phase 3: Ollama Model Optimization (Fix 11.5GiB Memory Error)
+- [x] 1. Delete duplicate codellama models: ollama rm codellama:latest (keep :7b)
+- [x] 2. Pull quantized efficient models:
+  - Fastest: ollama pull llama3.2:1b
+  - Balance: [x] llama3.2:3b  
+  - Reasoning: qwen2.5:3b
+- [x] 3. Update dashboard/rag.py model to quantized version ('llama3.2:3b')
+- [ ] 4. Test RAG endpoint without memory error
 
+## Phase 4: Additional Services (If Needed)
+- [ ] Start Redis (required for Celery)
+- [ ] Start Celery worker/beat
+- [ ] Verify full stack (Django + Celery + RAG)
+
+**Status: Phase 1 ✅ COMPLETE | Server running at http://localhost:8000 | Next: Ollama optimization**
+
+## Phase 2: Environment Cleanup (Consolidate & Free Space)
+- [ ] 1. Identify all .venv directories across workspace (use cleanup_venvs.bat?)
+- [ ] 2. Keep only IndusVision_WorkBook, remove others
+- [ ] 3. Run cleanup_venvs.bat if applicable
+
+## Phase 3: Ollama Model Optimization (Fix 11.5GiB Memory Error)
+- [ ] 1. Delete duplicate codellama models: ollama rm codellama:latest (keep :7b)
+- [ ] 2. Pull quantized efficient models:
+  - Fastest: ollama pull llama3.2:1b
+  - Balance: llama3.2:3b  
+  - Reasoning: qwen2.5:3b
+- [ ] 3. Update dashboard/rag.py model to quantized version (e.g., 'llama3.2:3b-q4_0')
+- [ ] 4. Test RAG endpoint without memory error
+
+## Phase 4: Additional Services (If Needed)
+- [ ] Start Redis (required for Celery)
+- [ ] Start Celery worker/beat
+- [ ] Verify full stack (Django + Celery + RAG)
+
+**Status: Starting Phase 1**

@@ -1,0 +1,15 @@
+All available projects in C:/Users/manoj:
+- ConsolidatedProjects/indusvision-dashboard (IndusVision_WorkBook active)
+- ConsolidatedProjects/ollama-code-pilot-manoj548
+- Desktop (various files)
+- Downloads
+- Documents
+- OneDrive/Pictures etc.
+
+Separate venv project: ConsolidatedProjects/indusvision-dashboard/indusvision_workbook (symlink to WorkBook)
+
+Use dashboard/agent for small projects generation via RAG.
+
+Server running clean, DB unlocked.
+
+

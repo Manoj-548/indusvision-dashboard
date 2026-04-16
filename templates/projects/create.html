@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}New Project | IndusVision{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h2 class="card-title mb-3">Create New Project</h2>
+          <form action="{% url 'project_create' %}" method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+              <label for="name" class="form-label">Project Name</label>
+              <input type="text" class="form-control" id="name" name="name" placeholder="Enter project name" required>
+            </div>
+            <div class="mb-3">
+              <label for="workspace_name" class="form-label">Workspace</label>
+              <input type="text" class="form-control" id="workspace_name" name="workspace_name" placeholder="Default" value="Default">
+              <div class="form-text">Existing workspace names will be reused; otherwise a new workspace is created.</div>
+            </div>
+            <div class="mb-3">
+              <label for="project_type" class="form-label">Project Type</label>
+              <select class="form-select" id="project_type" name="project_type">
+                {% for value, label in project_types %}
+                <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="mb-3">
+              <label for="description" class="form-label">Description</label>
+              <textarea class="form-control" id="description" name="description" rows="4" placeholder="Describe the project"></textarea>
+            </div>
+            <div class="mb-3">
+              <label for="classes" class="form-label">Label Classes</label>
+              <input type="text" class="form-control" id="classes" name="classes" placeholder="car,person,tree">
+              <div class="form-text">Comma-separated list of annotation classes used in this project.</div>
+            </div>
+            <div class="d-flex justify-content-between">
+              <a href="{% url 'projects_list' %}" class="btn btn-secondary">Cancel</a>
+              <button type="submit" class="btn btn-primary">Create Project</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

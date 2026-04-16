@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ project.name }} | IndusVision{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2>{{ project.name }}</h2>
+      <p class="text-muted mb-1">{{ project.description|default:'No description provided.' }}</p>
+      <small class="text-muted">Workspace: {{ workspace.name }} · Created: {{ project.created_at|date:'M d, Y' }}</small>
+    </div>
+    <div>
+      <a href="{% url 'projects_list' %}" class="btn btn-outline-secondary">Back to Projects</a>
+      <a href="{% url 'project_update' project.id %}" class="btn btn-primary">Edit</a>
+      <form action="{% url 'project_delete' project.id %}" method="post" class="d-inline">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Delete</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title">Project Overview</h5>
+          <div class="row">
+            <div class="col-sm-6 mb-3">
+              <div class="border rounded p-3 h-100">
+                <strong>Total Images</strong>
+                <div class="display-6">{{ stats.total_images }}</div>
+              </div>
+            </div>
+            <div class="col-sm-6 mb-3">
+              <div class="border rounded p-3 h-100">
+                <strong>Annotated Images</strong>
+                <div class="display-6">{{ stats.annotated_images }}</div>
+              </div>
+            </div>
+            <div class="col-sm-6 mb-3">
+              <div class="border rounded p-3 h-100">
+                <strong>Total Annotations</strong>
+                <div class="display-6">{{ stats.total_annotations }}</div>
+              </div>
+            </div>
+            <div class="col-sm-6 mb-3">
+              <div class="border rounded p-3 h-100">
+                <strong>Approved</strong>
+                <div class="display-6">{{ stats.approved_annotations }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mt-4 shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title">Recent Images</h5>
+          <div class="row g-3">
+            {% for image in images %}
+            <div class="col-6 col-md-4">
+              <div class="card h-100">
+                <img src="{{ image.image_file.url }}" class="card-img-top" alt="{{ image.filename }}">
+                <div class="card-body p-2">
+                  <p class="mb-1 text-truncate">{{ image.filename }}</p>
+                  <small class="text-muted">{{ image.width }}×{{ image.height }}</small>
+                </div>
+                <div class="card-footer bg-white py-2">
+                  <a href="{% url 'annotate_image' project.workspace.id project.id image.id %}" class="btn btn-sm btn-outline-primary w-100">Annotate</a>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title">Settings</h5>
+          <p><strong>Type:</strong> {{ project.get_project_type_display }}</p>
+          <p><strong>Classes:</strong> {{ project.classes|join:', ' }}</p>
+          <p><strong>Assigned Workspace:</strong> {{ workspace.name }}</p>
+          <p><strong>Status:</strong> Active</p>
+        </div>
+      </div>
+
+      <div class="card mt-4 shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title">Team & Permissions</h5>
+          <p class="text-muted">Admin access only for creating, updating, and deleting projects.</p>
+          <p class="mb-1"><strong>Owner:</strong> {{ project.workspace.created_by.username }}</p>
+          <p class="mb-1"><strong>Admin access:</strong> {% if user.is_staff or user.is_superuser %}Yes{% else %}No{% endif %}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

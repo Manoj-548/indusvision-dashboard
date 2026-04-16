@@ -1,0 +1,155 @@
+:root {
+  /* Original Indusvision Colors */
+  --brand-primary: #1a9d63;
+  --brand-secondary: #14a6c5;
+  --bg-light: #f3fcf8;
+  --text-dark: #144a64;
+  --card-shadow: 0 4px 6px -1px rgba(0, 0,0,0.1);
+
+  /* Dark Mode */
+  --bg-dark: #0f1419;
+  --text-light: #e2e8f0;
+  --card-dark: #1e293b;
+  --primary-dark: #0f6b48;
+
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, var(--brand-primary), #0b7a4b);
+  --gradient-glow: linear-gradient(135deg, rgba(26,157,99,0.1), rgba(20,166,197,0.1));
+
+  /* Animations */
+  --transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-smooth: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+[data-theme="dark"] {
+  --bg-light: var(--bg-dark);
+  --text-dark: var(--text-light);
+  --card-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+body {
+  background: var(--bg-light);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  transition: var(--transition-smooth);
+}
+
+.navbar-brand {
+  font-weight: 800;
+  color: var(--brand-primary) !important;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.card {
+  border-radius: 0.85rem;
+  box-shadow: var(--card-shadow);
+  border: none;
+  background: var(--bg-light);
+  transition: var(--transition-smooth);
+  overflow: hidden;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0,0,0.1), 0 10px 10px -5px rgba(0, 0,0,0.04);
+}
+
+.neumorphic {
+  background: var(--gradient-glow);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.btn-primary {
+  background: var(--gradient-primary);
+  border: none;
+  border-radius: 0.5rem;
+  transition: var(--transition-fast);
+  box-shadow: 0 4px 14px 0 rgba(26,157,99,0.39);
+}
+
+.btn-primary:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 25px 0 rgba(26,157,99,0.5);
+  background: linear-gradient(135deg, #0b7a4b, var(--brand-primary));
+}
+
+/* Skeleton Loaders */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+[data-theme="dark"] .skeleton {
+  background: linear-gradient(90deg, #2a2a2a 25%, #1a1a1a 50%, #2a2a2a 75%);
+}
+
+/* Toast Notifications */
+.toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+}
+
+.toast {
+  min-width: 300px;
+  margin-bottom: 10px;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0,0,0.1);
+  animation: toastSlideIn 0.3s ease-out;
+}
+
+@keyframes toastSlideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* GSAP Ready Classes */
+.gsap-fade-in { opacity: 0; transform: translateY(20px); }
+.gsap-scale-up { transform: scale(0.9); opacity: 0; }
+.gsap-slide-left { transform: translateX(50px); opacity: 0; }
+
+.chart-container {
+  position: relative;
+  height: 400px;
+}
+
+/* Smooth Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.1);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--brand-primary);
+  border-radius: 4px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .card { margin-bottom: 1rem; }
+  .navbar-nav { text-align: center; }
+}
+
+/* Pulse Animation for Live Indicators */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .5; }
+}
+
+.live-indicator {
+  animation: pulse 2s infinite;
+  background: var(--brand-secondary);
+}

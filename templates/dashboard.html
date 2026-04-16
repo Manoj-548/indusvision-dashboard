@@ -2,6 +2,8 @@
 {% block title %}IndusVision Dashboard{% endblock %}
 
 {% block content %}
+{% csrf_token %}
+
 <!-- Knowledge Stats Cards -->
 <div class="row mb-4">
   <div class="col-md-3">
@@ -23,132 +25,98 @@
   <div class="col-md-3">
     <div class="card text-white bg-info">
       <div class="card-body">
-        <h5>Total Files</h5>
-        <h2>{{ total_files }}</h2>
+        <h5>Source Files</h5>
+        <h2>{{ source_files_total }}</h2>
       </div>
     </div>
   </div>
   <div class="col-md-3">
     <div class="card text-white bg-warning">
       <div class="card-body">
-        <h5>Knowledge Total</h5>
-        <h2>{{ knowledge_stats.total }}</h2>
+        <h5>Knowledge Items</h5>
+        <h2>{{ knowledge_total }}</h2>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Tabs Navigation -->
-<ul class="nav nav-tabs mb-4" id="dashboardTabs" role="tablist">
-  <li class="nav-item" role="presentation">
-    <button class="nav-link active" id="knowledge-tab" data-bs-toggle="tab" data-bs-target="#knowledge" type="button">Knowledge</button>
-  </li>
-  <li class="nav-item" role="presentation">
-    <button class="nav-link" id="docs-tab" data-bs-toggle="tab" data-bs-target="#docs" type="button">Docs</button>
-  </li>
-  <li class="nav-item" role="presentation">
-    <button class="nav-link" id="scripts-tab" data-bs-toggle="tab" data-bs-target="#scripts" type="button">Scripts</button>
-  </li>
-  <li class="nav-item" role="presentation">
-    <button class="nav-link" id="models-tab" data-bs-toggle="tab" data-bs-target="#models" type="button">Models</button>
-  </li>
-  <li class="nav-item" role="presentation">
-    <button class="nav-link" id="metrics-tab" data-bs-toggle="tab" data-bs-target="#metrics" type="button">Metrics</button>
-  </li>
+<!-- Tabs -->
+<ul class="nav nav-tabs mb-4" id="dashboardTabs">
+  <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#knowledge">Knowledge</a></li>
+  <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#docs">Docs</a></li>
+  <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#scripts">Scripts</a></li>
+  <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#models">Models</a></li>
+  <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#metrics">Metrics</a></li>
+  <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#rag">RAG</a></li>
+  <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#projects">Projects</a></li>
+  <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tensorboard">TensorBoard</a></li>
 </ul>
 
-<!-- Tab Content -->
-<div class="tab-content" id="dashboardTabContent">
-  <div class="tab-pane fade show active" id="knowledge" role="tabpanel">
-    <div class="row">
-      <div class="col-md-8">
-        <div class="card">
-          <div class="card-header">
-            <h5>Consolidated Knowledge Overview</h5>
-            <button class="btn btn-primary btn-sm" onclick="syncData()">Refresh</button>
-          </div>
-          <div class="card-body" style="position: relative; height: 400px; width: 400px; margin: 0 auto;">
-            <canvas id="fileTypePie"></canvas>
-          </div>
-        </div>
+<div class="tab-content">
+
+  <!-- Knowledge -->
+  <div class="tab-pane fade show active" id="knowledge">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between">
+        <h5>Consolidated Knowledge Overview</h5>
+        <button class="btn btn-primary btn-sm" onclick="syncData()">Refresh</button>
       </div>
-      <div class="col-md-4">
-        <div class="card">
-          <div class="card-header">
-            <h5>File Types</h5>
-          </div>
-          <div class="card-body">
-            <ul class="list-group list-group-flush">
-              {% for ft in file_type_counts %}
-              <li class="list-group-item d-flex justify-content-between">
-                {{ ft.file_type }}
-                <span class="badge bg-primary">{{ ft.count }}</span>
-              </li>
-              {% endfor %}
-            </ul>
-          </div>
-        </div>
+      <div class="card-body chart-container">
+        <canvas id="fileTypePie"></canvas>
       </div>
     </div>
   </div>
 
-  <div class="tab-pane fade" id="docs" role="tabpanel">
+  <!-- Docs -->
+  <div class="tab-pane fade" id="docs">
     <div class="card">
-      <div class="card-header">
-        <h5>Documentation (Top 20)</h5>
-      </div>
+      <div class="card-header"><h5>Documentation</h5></div>
       <div class="card-body">
-        <div class="table-responsive">
-          <table class="table table-hover">
-            <thead>
-              <tr>
-                <th>Title</th>
-                <th>Preview</th>
-                <th>Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for doc in knowledge_docs %}
-              <tr>
-                <td>{{ doc.title }}</td>
-                <td>{{ doc.content_preview|truncatechars:100 }}</td>
-                <td>{{ doc.consolidated_at|date:"M d Y" }}</td>
-              </tr>
-              {% empty %}
-              <tr><td colspan="3" class="text-center text-muted">No docs. Sync first.</td></tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Preview</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for doc in knowledge_docs %}
+            <tr>
+              <td>{{ doc.title }}</td>
+              <td>{{ doc.content_preview|truncatechars:100 }}</td>
+              <td>{{ doc.consolidated_at|date:"M d Y" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3" class="text-center">No docs found.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
 
-  <div class="tab-pane fade" id="scripts" role="tabpanel">
+  <!-- Scripts -->
+  <div class="tab-pane fade" id="scripts">
     <div class="card">
-      <div class="card-header">
-        <h5>Scripts & Automation</h5>
-      </div>
+      <div class="card-header"><h5>Scripts</h5></div>
       <div class="card-body">
-        <div class="list-group">
-          {% for script in scripts %}
-          <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-            {{ script.path }}
-            <span class="badge bg-success rounded-pill">{{ script.line_count }} lines</span>
-          </a>
-          {% empty %}
-          <div class="text-center text-muted p-5">No scripts. Run sync_source_files().</div>
-          {% endfor %}
+        {% for script in scripts %}
+        <div class="list-group-item d-flex justify-content-between">
+          {{ script.path }}
+          <span class="badge bg-success">{{ script.line_count }} lines</span>
         </div>
+        {% empty %}
+        <div class="text-muted">No scripts found.</div>
+        {% endfor %}
       </div>
     </div>
   </div>
 
-  <div class="tab-pane fade" id="models" role="tabpanel">
+  <!-- Models -->
+  <div class="tab-pane fade" id="models">
     <div class="card">
-      <div class="card-header">
-        <h5>Model Weights</h5>
-      </div>
+      <div class="card-header"><h5>Model Weights</h5></div>
       <div class="card-body">
         <table class="table">
           <thead>
@@ -166,7 +134,7 @@
               <td>{{ model.last_used|date:"M d" }}</td>
             </tr>
             {% empty %}
-            <tr><td colspan="3" class="text-center text-muted">No models. Sync models.</td></tr>
+            <tr><td colspan="3">No models found.</td></tr>
             {% endfor %}
           </tbody>
         </table>
@@ -174,28 +142,150 @@
     </div>
   </div>
 
-  <div class="tab-pane fade" id="metrics" role="tabpanel">
+  <!-- Metrics -->
+  <div class="tab-pane fade" id="metrics">
     <div class="card">
-      <div class="card-header">
-        <h5>Live Metrics</h5>
-      </div>
-      <div class="card-body" style="position: relative; height: 350px;">
+      <div class="card-header"><h5>Live Metrics</h5></div>
+      <div class="card-body chart-container">
         <canvas id="metricsChart"></canvas>
       </div>
     </div>
   </div>
+
+  <!-- RAG -->
+  <div class="tab-pane fade" id="rag">
+    <div class="card">
+      <div class="card-header"><h5>RAG Agent</h5></div>
+      <div class="card-body">
+        <div id="rag-chat" style="height:400px;overflow-y:auto;border:1px solid #ddd;padding:15px;background:#f8f9fa;">
+          <div id="rag-messages"></div>
+        </div>
+
+        <div class="input-group mt-3">
+          <textarea id="rag-query" class="form-control" rows="2"></textarea>
+          <button id="rag-send-btn" class="btn btn-primary">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TensorBoard -->
+  <div class="tab-pane fade" id="tensorboard">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between">
+        <h5>TensorBoard</h5>
+        <button class="btn btn-primary btn-sm" onclick="startTensorBoard()">Start TensorBoard</button>
+      </div>
+      <div class="card-body">
+        <div id="tb-status"></div>
+      </div>
+    </div>
+  </div>
+
 </div>
 
+<style>
+.chart-container {
+  position: relative;
+  height: 60vh;
+}
+</style>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
-function syncData() {
-  fetch('/api/sync/', {method: 'POST'})
-    .then(r => r.json())
-    .then(() => location.reload())
-    .catch(e => alert('Sync failed'));
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+      cookie = cookie.trim();
+      if (cookie.startsWith(name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
 }
 
-// Pie Chart
+const csrftoken = getCookie('csrftoken');
+
+function syncData() {
+  fetch('/dashboard/sync/', {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': csrftoken
+    }
+  })
+  .then(r => r.json())
+  .then(() => location.reload())
+  .catch(() => alert('Sync failed'));
+}
+
+function startTensorBoard() {
+  fetch('/dashboard/start-tensorboard/', {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': csrftoken
+    }
+  })
+  .then(r => r.json())
+  .then(data => {
+    const statusDiv = document.getElementById('tb-status');
+
+    if (data.status === 'started') {
+      statusDiv.innerHTML =
+        '<div class="alert alert-success">TensorBoard Started! <a href="http://localhost:6006" target="_blank">Open</a></div>';
+    } else if (data.status === 'already_running') {
+      statusDiv.innerHTML =
+        '<div class="alert alert-info">Already Running. <a href="http://localhost:6006" target="_blank">Open</a></div>';
+    } else {
+      statusDiv.innerHTML =
+        '<div class="alert alert-danger">Failed to Start</div>';
+    }
+  })
+  .catch(() => alert('TensorBoard Error'));
+}
+
+const ragMessages = document.getElementById('rag-messages');
+const ragQueryInput = document.getElementById('rag-query');
+const ragSendBtn = document.getElementById('rag-send-btn');
+
+function addRagMessage(role, content) {
+  const div = document.createElement('div');
+  div.className = `mb-2 ${role === 'user' ? 'text-end' : ''}`;
+  div.innerHTML =
+    `<div class="d-inline-block p-2 rounded ${role === 'user' ? 'bg-primary text-white' : 'bg-light'}">${content}</div>`;
+  ragMessages.appendChild(div);
+  document.getElementById('rag-chat').scrollTop =
+    document.getElementById('rag-chat').scrollHeight;
+}
+
+function sendRagQuery() {
+  const query = ragQueryInput.value.trim();
+  if (!query) return;
+
+  addRagMessage('user', query);
+  ragQueryInput.value = '';
+
+  fetch('/dashboard/agent/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'X-CSRFToken': csrftoken
+    },
+    body: `query=${encodeURIComponent(query)}`
+  })
+  .then(r => r.json())
+  .then(data => {
+    addRagMessage('assistant', data.response || data.error);
+  })
+  .catch(() => addRagMessage('assistant', 'Network Error'));
+}
+
+ragSendBtn?.addEventListener('click', sendRagQuery);
+
 const pieCtx = document.getElementById('fileTypePie')?.getContext('2d');
 if (pieCtx) {
   new Chart(pieCtx, {
@@ -204,14 +294,12 @@ if (pieCtx) {
       labels: [{% for ft in file_type_counts %}"{{ ft.file_type }}",{% endfor %}],
       datasets: [{
         data: [{% for ft in file_type_counts %}{{ ft.count }},{% endfor %}],
-        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40']
+        backgroundColor: ['#FF6384','#36A2EB','#FFCE56','#4BC0C0','#9966FF']
       }]
-    },
-    options: { responsive: true }
+    }
   });
 }
 
-// Metrics Chart
 const metricsCtx = document.getElementById('metricsChart')?.getContext('2d');
 if (metricsCtx) {
   new Chart(metricsCtx, {
@@ -221,11 +309,11 @@ if (metricsCtx) {
       datasets: [{
         label: 'Metrics',
         data: [{% for m in metrics %}{{ m.value }},{% endfor %}],
-        borderColor: '#4BC0C0',
-        fill: false
+        borderColor: '#4BC0C0'
       }]
     }
   });
 }
 </script>
-{% endblock %} 
+
+{% endblock %}

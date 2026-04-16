@@ -33,7 +33,7 @@ class SourceFileAdmin(admin.ModelAdmin):
 
 @admin.register(ModelWeights)
 class ModelWeightsAdmin(admin.ModelAdmin):
-    list_display = ('name', 'model_type', 'status', 'num_classes', 'last_used')
+    list_display = ('name', 'model_type', 'status', 'num_classes', 'last_used', 'path', 'accuracy')
     list_filter = ('model_type', 'status')
     search_fields = ('name',)
     ordering = ('-last_used',)

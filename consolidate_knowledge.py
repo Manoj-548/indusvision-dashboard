@@ -81,8 +81,12 @@ def consolidate_knowledge():
     
     extracts = []
     
-    # Scan doc_* and script_* files
-    patterns = ['doc_*.md', 'script_*.py', 'script_*.bat', 'script_*.ps1']
+    # Scan doc_* and script_* files plus common code and data engineering formats
+    patterns = [
+        'doc_*.*', 'script_*.*', '*.md', '*.py', '*.bat', '*.ps1', '*.txt', '*.cs',
+        '*.js', '*.jsx', '*.ts', '*.tsx', '*.java', '*.go', '*.rb', '*.json',
+        '*.yaml', '*.yml', '*.sql', '*.xml', '*.ini', '*.cfg', '*.unity'
+    ]
     for pattern in patterns:
         for filepath in root.glob(pattern):
             extract = extract_from_file(filepath)
