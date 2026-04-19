@@ -12,6 +12,25 @@
             box-sizing: border-box;
         }
         
+        /* NEW UTILITY CLASSES - INLINE STYLE REPLACEMENT */
+        .text-muted-small { color: #a0a0a0; margin-top: 5px; }
+        .upload-header-grid { display: grid; gap: 12px; max-width: 420px; margin-bottom: 20px; }
+        .form-group-small { margin-bottom: 0; }
+        .upload-text-small { color: #666; font-size: 11px; }
+        .empty-table { text-align: center; color: #a0a0a0; }
+        .no-exports { text-align: center; color: #a0a0a0; }
+        .settings-maxwidth { max-width: 500px; }
+        .slider-width { width: 100%; }
+        .upload-list-margin { margin-top: 20px; }
+        .images-list-margin { margin-top: 20px; }
+        .recent-exports-margin { margin-top: 30px; }
+        .image-folder { font-size: 11px; color: #a0a0a0; margin-bottom: 5px; }
+        .upload-queue-title { margin-bottom: 10px; color: #e94560; }
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
         body {
             font-family: 'Inter', sans-serif;
             background: #0a0a14;
@@ -308,7 +327,7 @@
         <div class="header">
             <div>
                 <h1>{{ project.name }}</h1>
-                <p style="color: #a0a0a0; margin-top: 5px;">{{ project.project_type|upper }} Annotation Project</p>
+                <p class="text-muted-small">{{ project.project_type|upper }} Annotation Project</p>
             </div>
             <div class="header-actions">
                 <button class="btn" onclick="showMetrics()">📊 Metrics</button>
@@ -346,7 +365,11 @@
         
         <!-- Images Tab -->
         <div id="images" class="tab-content active">
-            <div style="margin-bottom: 20px;">
+            <div class="upload-header-grid">
+                <div class="form-group form-group-small">
+                    <label>Upload Folder Tag</label>
+                    <input type="text" id="uploadFolderTag" placeholder="Optional folder tag for uploaded images">
+                </div>
                 <button class="btn btn-primary" onclick="triggerUpload()">+ Upload Images/Folders</button>
             </div>
             
@@ -443,8 +466,9 @@
     </div>
     
     <script>
-        const projectId = {{ project.id }};
-        const workspaceId = {{ project.workspace.id }};
+        // project/workspace IDs read from data attributes
+        const projectId = parseInt(document.body.dataset.projectId || '0');
+        const workspaceId = parseInt(document.body.dataset.workspaceId || '0');
         
         // Initialize
         loadProjectData();
@@ -473,6 +497,7 @@
                     <img src="${img.image_file || '/static/placeholder.png'}" class="image-preview">
                     <div class="image-info">
                         <div class="image-name">${img.filename.substring(0, 25)}</div>
+                        ${img.folder_tag ? `<div class="image-folder">Folder: ${img.folder_tag}</div>` : ''}
                         <span class="image-status ${img.status}">${img.status}</span>
                     </div>
                 </div>
@@ -544,6 +569,7 @@
             fileList.style.display = 'block';
             fileItems.innerHTML = '';
             
+            const folderTag = document.getElementById('uploadFolderTag').value.trim();
             const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
             
             if (imageFiles.length === 0) {
@@ -569,6 +595,9 @@
                 try {
                     const formData = new FormData();
                     formData.append('image_file', file);
+                    if (folderTag) {
+                        formData.append('folder_tag', folderTag);
+                    }
                     
                     const res = await fetch(`/annotation/${workspaceId}/project/${projectId}/images/`, {
                         method: 'POST',
@@ -602,18 +631,43 @@
         }
         
         async function exportDataset(format) {
-            const res = await fetch(`/annotation/api/workspaces/${workspaceId}/projects/${projectId}/export/`, {
+            const formData = new FormData();
+            formData.append('format', format);
+
+            const res = await fetch(`/annotation/export/${workspaceId}/${projectId}/`, {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({format: format, include_auto_annotations: true})
+                body: formData
             });
-            const data = await res.json();
-            alert('Dataset exported! Download URL: ' + data.download_url);
+
+            if (!res.ok) {
+                const errorText = await res.text();
+                alert('Dataset export failed: ' + errorText);
+                return;
+            }
+
+            const blob = await res.blob();
+            const contentDisposition = res.headers.get('Content-Disposition') || '';
+            let filename = `dataset_${projectId}.zip`;
+            const match = /filename="?(.+?)"?(;|$)/.exec(contentDisposition);
+            if (match) {
+                filename = match[1];
+            }
+
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+
+            alert('Dataset exported! File downloaded.');
             loadProjectData();
         }
         
         function openImage(imageId) {
-            window.location.href = `/annotation/api/workspaces/${workspaceId}/projects/${projectId}/images/${imageId}/annotate/`;
+            window.location.href = `/annotation/${workspaceId}/project/${projectId}/images/${imageId}/annotate/`;
         }
         
         function showMetrics() {

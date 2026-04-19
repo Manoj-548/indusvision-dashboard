@@ -1,26 +1,43 @@
 from django.contrib import admin
-from .models import LLMConfig, KnowledgeEntry, ChatHistory, RateLimitConfig
+from .models import Workspace, WorkspaceMember, Project, Image, Annotation, Dataset, SourceFile, KnowledgeEntry, FeedbackMemory
 
-@admin.register(LLMConfig)
-class LLMConfigAdmin(admin.ModelAdmin):
-    list_display = ('user', 'model_name', 'base_url', 'is_active', 'created_at')
-    list_filter = ('is_active', 'created_at')
-    search_fields = ('user__username', 'model_name')
+@admin.register(Workspace)
+class WorkspaceAdmin(admin.ModelAdmin):
+	list_display = ("name", "created_by", "created_at")
+	search_fields = ("name",)
+
+@admin.register(WorkspaceMember)
+class WorkspaceMemberAdmin(admin.ModelAdmin):
+	list_display = ("user", "workspace", "role")
+	list_filter = ("role",)
+
+@admin.register(Project)
+class ProjectAdmin(admin.ModelAdmin):
+	list_display = ("name", "workspace", "project_type", "created_at")
+	search_fields = ("name",)
+
+@admin.register(Image)
+class ImageAdmin(admin.ModelAdmin):
+	list_display = ("project", "file", "status", "uploaded_at")
+	list_filter = ("status",)
+
+@admin.register(Annotation)
+class AnnotationAdmin(admin.ModelAdmin):
+	list_display = ("image", "user", "annotation_type", "created_at", "is_approved")
+	list_filter = ("annotation_type", "is_approved")
+
+@admin.register(Dataset)
+class DatasetAdmin(admin.ModelAdmin):
+	list_display = ("project", "version", "created_at")
+
+@admin.register(SourceFile)
+class SourceFileAdmin(admin.ModelAdmin):
+	list_display = ("path", "file_type")
 
 @admin.register(KnowledgeEntry)
 class KnowledgeEntryAdmin(admin.ModelAdmin):
-    list_display = ('title', 'user', 'knowledge_type', 'created_at')
-    list_filter = ('knowledge_type', 'created_at')
-    search_fields = ('title', 'content_preview')
+	list_display = ("title", "created_at")
 
-@admin.register(ChatHistory)
-class ChatHistoryAdmin(admin.ModelAdmin):
-    list_display = ('user', 'model_used', 'created_at')
-    list_filter = ('model_used', 'created_at')
-    search_fields = ('query', 'response', 'user__username')
-    readonly_fields = ('created_at',)
-
-@admin.register(RateLimitConfig)
-class RateLimitConfigAdmin(admin.ModelAdmin):
-    list_display = ('user', 'requests_per_minute', 'enabled')
-    list_filter = ('enabled',)
+@admin.register(FeedbackMemory)
+class FeedbackMemoryAdmin(admin.ModelAdmin):
+	list_display = ("prompt", "improved")

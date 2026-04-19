@@ -1,64 +1,83 @@
 from django.db import models
 from django.contrib.auth.models import User
-from django.utils import timezone
+
+# =========================
+# WORKSPACE + RBAC
+# =========================
+
+class Workspace(models.Model):
+    name = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+class WorkspaceMember(models.Model):
+    ROLE_CHOICES = [
+        ('admin', 'Admin'),
+        ('reviewer', 'Reviewer'),
+        ('annotator', 'Annotator'),
+    ]
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE)
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES)
+
+# =========================
+# PROJECT
+# =========================
+
+class Project(models.Model):
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE)
+    name = models.CharField(max_length=200)
+    project_type = models.CharField(max_length=50)
+    classes = models.JSONField(default=list)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+# =========================
+# IMAGE + ANNOTATION
+# =========================
+
+class Image(models.Model):
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    file = models.ImageField(upload_to='images/')
+    status = models.CharField(max_length=50, default='pending')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+class Annotation(models.Model):
+    TYPE_CHOICES = [
+        ('bbox', 'Bounding Box'),
+        ('polygon', 'Polygon'),
+        ('smart_polygon', 'Smart Polygon'),
+    ]
+    image = models.ForeignKey(Image, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    annotation_type = models.CharField(max_length=50, choices=TYPE_CHOICES)
+    data = models.JSONField()  # stores bbox or polygon
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_approved = models.BooleanField(default=False)
+
+# =========================
+# DATASET EXPORT
+# =========================
+
+class Dataset(models.Model):
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    version = models.IntegerField(default=1)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+# =========================
+# AI KNOWLEDGE + MEMORY
+# =========================
 
 class SourceFile(models.Model):
-    path = models.CharField(max_length=500, unique=True)
-    file_type = models.CharField(max_length=20, default='other')
-    line_count = models.IntegerField(default=0)
-    last_updated = models.DateTimeField(null=True, blank=True)
-    size_bytes = models.BigIntegerField(default=0)
-    is_dashboard_relevant = models.BooleanField(default=False)
-    is_knowledge_relevant = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return self.path
+    path = models.CharField(max_length=500)
+    file_type = models.CharField(max_length=50)
 
 class KnowledgeEntry(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
-    source_file = models.ForeignKey(SourceFile, on_delete=models.CASCADE, null=True, blank=True)
-    knowledge_type = models.CharField(max_length=50, default='code')
     title = models.CharField(max_length=200)
-    content_preview = models.TextField(blank=True)
-    extracted_data = models.JSONField(default=dict)
-    vector_id = models.CharField(max_length=100, blank=True)
+    content_preview = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return self.title
-
-class LLMConfig(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    model_name = models.CharField(max_length=100, default='qwen2.5-coder:3b')
-    base_url = models.CharField(max_length=200, default='http://localhost:11434')
-    request_timeout = models.IntegerField(default=120)
-    num_ctx = models.IntegerField(default=4096)
-    num_predict = models.IntegerField(default=512)
-    temperature = models.FloatField(default=0.7)
-    top_p = models.FloatField(default=0.9)
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.user.username} - {self.model_name}"
-
-class ChatHistory(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    query = models.TextField()
+class FeedbackMemory(models.Model):
+    prompt = models.TextField()
     response = models.TextField()
-    model_used = models.CharField(max_length=100)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.user.username}: {self.query[:50]}..."
-
-class RateLimitConfig(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    requests_per_minute = models.IntegerField(default=60)
-    requests_per_hour = models.IntegerField(default=1000)
-    concurrent_requests = models.IntegerField(default=5)
-    enabled = models.BooleanField(default=False)
-
-    def __str__(self):
-        return f"RateLimit: {self.user.username}"
+    improved = models.BooleanField(default=False)

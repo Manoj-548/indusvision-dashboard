@@ -1,11 +1,12 @@
+
 from django.contrib import admin
 from django.urls import path, include
-from .views import dashboard_view, login_view
+from indusvision import views as indusvision_views
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('', login_view, name='login'),
-    path('login/', login_view, name='login_page'),
-    path('dashboard/', include('dashboard.urls')),
-    path('api/', include('api.urls')),
+    path("admin/", admin.site.urls),
+    path("login/", indusvision_views.login_view, name="login"),
+    path("dashboard/", indusvision_views.dashboard_view, name="dashboard"),
+    path("", include("dashboard.urls")),
+    path("api/", include("api.urls")),
 ]

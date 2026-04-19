@@ -1,447 +1,162 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Annotation Canvas - Unified Workspace</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+ <script>
+    const canvas = document.getElementById('annotationCanvas');
+    const ctx = canvas.getContext('2d');
+
+// imageId read from data attribute
+const imageId = parseInt(document.body.dataset.imageId || '0');
+const projectId = "{{ image.project.id|default:'' }}";
+const workspaceId = "{{ image.project.workspace.id|default:'' }}";
+
+const imageFile = "{{ image.image_file.url|default:'' }}";
+
+    let imgObj = new Image();
+    imgObj.crossOrigin = "anonymous";
+
+    imgObj.onload = () => {
+        resizeCanvas();
+        drawImage();
+    };
+
+    imgObj.src = imageFile;
+
+    let annotations = [];
+    let currentTool = 'bbox';
+    let isDrawing = false;
+    let startX, startY;
+
+    function resizeCanvas() {
+        const container = canvas.parentElement;
+        canvas.width = container.clientWidth;
+        canvas.height = container.clientHeight;
+        drawImage();
+    }
+
+    function drawImage() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const scale = Math.min(canvas.width / imgObj.width, canvas.height / imgObj.height);
+        const x = (canvas.width - imgObj.width * scale) / 2;
+        const y = (canvas.height - imgObj.height * scale) / 2;
+
+        ctx.drawImage(imgObj, x, y, imgObj.width * scale, imgObj.height * scale);
+
+        canvas.offsetX = x;
+        canvas.offsetY = y;
+        canvas.scale = scale;
+    }
+
+    function drawAnnotations() {
+        drawImage();
+        annotations.forEach(ann => {
+            const color = document.getElementById('colorPicker').value;
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+
+            ctx.strokeRect(ann.x1, ann.y1, ann.x2 - ann.x1, ann.y2 - ann.y1);
+            ctx.fillStyle = color;
+            ctx.fillText(ann.label, ann.x1, ann.y1 - 5);
+        });
+    }
+
+    canvas.addEventListener('mousedown', (e) => {
+        if (currentTool === 'bbox') {
+            isDrawing = true;
+            const rect = canvas.getBoundingClientRect();
+            startX = e.clientX - rect.left;
+            startY = e.clientY - rect.top;
         }
-        
-        body {
-            font-family: 'Inter', sans-serif;
-            background: #0a0a14;
-            color: #fff;
-        }
-        
-        .container {
-            display: grid;
-            grid-template-columns: 1fr 300px;
-            height: 100vh;
-            gap: 20px;
-            padding: 20px;
-        }
-        
-        .canvas-section {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        
-        .toolbar {
-            background: #1a1a2e;
-            padding: 15px;
-            border-radius: 8px;
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        
-        .tool-group {
-            display: flex;
-            gap: 5px;
-            align-items: center;
-            padding: 0 10px;
-            border-right: 1px solid #16213e;
-        }
-        
-        .tool-group:last-child {
-            border-right: none;
-        }
-        
-        label {
-            font-size: 12px;
-            color: #a0a0a0;
-        }
-        
-        .btn {
-            padding: 8px 16px;
-            background: #0f3460;
-            color: #fff;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            transition: background 0.3s;
-        }
-        
-        .btn:hover {
-            background: #16213e;
-        }
-        
-        .btn.active {
-            background: #e94560;
-        }
-        
-        select, input[type="color"], input[type="number"] {
-            padding: 6px 10px;
-            background: #16213e;
-            color: #fff;
-            border: 1px solid #0f3460;
-            border-radius: 4px;
-            font-size: 12px;
-        }
-        
-        canvas {
-            background: #16213e;
-            border: 2px solid #0f3460;
-            border-radius: 8px;
-            cursor: crosshair;
-            max-width: 100%;
-            flex: 1;
-        }
-        
-        .panel {
-            background: #1a1a2e;
-            padding: 15px;
-            border-radius: 8px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            overflow-y: auto;
-            max-height: 100vh;
-        }
-        
-        .panel-title {
-            font-size: 14px;
-            font-weight: bold;
-            color: #e94560;
-        }
-        
-        .annotation-item {
-            background: #16213e;
-            padding: 10px;
-            border-radius: 4px;
-            border-left: 3px solid #e94560;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 12px;
-        }
-        
-        .delete-btn {
-            background: #e94560;
-            color: #fff;
-            border: none;
-            padding: 4px 8px;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 11px;
-        }
-        
-        .delete-btn:hover {
-            background: #cc384e;
-        }
-        
-        .status-badge {
-            display: inline-block;
-            padding: 4px 8px;
-            background: #00d9a5;
-            color: #000;
-            border-radius: 3px;
-            font-size: 11px;
-            font-weight: bold;
-        }
-        
-        .stats {
-            background: #16213e;
-            padding: 10px;
-            border-radius: 4px;
-            font-size: 12px;
-            display: grid;
-            gap: 5px;
-        }
-        
-        .stat-row {
-            display: flex;
-            justify-content: space-between;
-            color: #a0a0a0;
-        }
-        
-        .stat-value {
-            color: #00d9a5;
-            font-weight: bold;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="canvas-section">
-            <!-- Toolbar -->
-            <div class="toolbar">
-                <div class="tool-group">
-                    <button class="btn active" id="bboxTool" title="Bounding Box">📦 BBox</button>
-                    <button class="btn" id="polygonTool" title="Polygon">🔷 Polygon</button>
-                    <button class="btn" id="keypointTool" title="Keypoint">🎯 Keypoint</button>
-                </div>
-                
-                <div class="tool-group">
-                    <label>Class:</label>
-                    <select id="classList">
-                        <option value="person">Person</option>
-                        <option value="vehicle">Vehicle</option>
-                        <option value="animal">Animal</option>
-                        <option value="object">Object</option>
-                    </select>
-                </div>
-                
-                <div class="tool-group">
-                    <label>Color:</label>
-                    <input type="color" id="colorPicker" value="#e94560">
-                </div>
-                
-                <div class="tool-group">
-                    <button class="btn" id="undoBtn">↶ Undo</button>
-                    <button class="btn" id="clearBtn">🗑️ Clear</button>
-                </div>
-                
-                <div class="tool-group">
-                    <button class="btn" id="autoAnnotate">✨ Auto-Annotate</button>
-                    <button class="btn" id="suggestBtn">💡 Suggest</button>
-                </div>
-                
-                <div class="tool-group">
-                    <button class="btn" id="saveBtn" style="background: #00d9a5; color: #000;">💾 Save</button>
-                </div>
-            </div>
-            
-            <!-- Canvas -->
-            <canvas id="annotationCanvas"></canvas>
-        </div>
-        
-        <!-- Right Panel -->
-        <div class="panel">
-            <div>
-                <div class="panel-title">Image Info</div>
-                <div class="stats">
-                    <div class="stat-row">
-                        <span>Filename:</span>
-                        <span class="stat-value" id="filename">{{ image.filename }}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span>Size:</span>
-                        <span class="stat-value">{{ image.width }}×{{ image.height }}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span>Status:</span>
-                        <span class="status-badge" id="status">{{ image.status|upper }}</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div>
-                <div class="panel-title">Annotations ({{ image.annotations.count }})</div>
-                <div id="annotationsList">
-                    <!-- Annotations will be listed here -->
-                </div>
-            </div>
-            
-            <div>
-                <div class="panel-title">Statistics</div>
-                <div class="stats">
-                    <div class="stat-row">
-                        <span>Total:</span>
-                        <span class="stat-value" id="totalAnn">0</span>
-                    </div>
-                    <div class="stat-row">
-                        <span>Manual:</span>
-                        <span class="stat-value" id="manualAnn">0</span>
-                    </div>
-                    <div class="stat-row">
-                        <span>Auto:</span>
-                        <span class="stat-value" id="autoAnn">0</span>
-                    </div>
-                    <div class="stat-row">
-                        <span>Approved:</span>
-                        <span class="stat-value" id="approvedAnn">0</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <script>
-        const canvas = document.getElementById('annotationCanvas');
-        const ctx = canvas.getContext('2d');
-        const imageId = {{ image.id }};
-        const projectId = "{{ image.project.id }}";
-        const workspaceId = "{{ image.project.workspace.id }}";
-        
-        // Image data
-        const imageFile = "{{ image.image_file.url }}";
-        let image = new Image();
-        image.crossOrigin = "anonymous";
-        image.onload = () => {
-            resizeCanvas();
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+        if (isDrawing) {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
             drawImage();
-        };
-        image.src = imageFile;
-        
-        // Canvas state
-        let annotations = [];
-        let currentTool = 'bbox';
-        let isDrawing = false;
-        let startX, startY;
-        let points = [];
-        
-        // Initialize
-        function resizeCanvas() {
-            const container = canvas.parentElement;
-            canvas.width = container.clientWidth;
-            canvas.height = container.clientHeight;
-            drawImage();
+            ctx.strokeStyle = document.getElementById('colorPicker').value;
+            ctx.strokeRect(startX, startY, x - startX, y - startY);
         }
-        
-        // Draw image
-        function drawImage() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            const scale = Math.min(canvas.width / image.width, canvas.height / image.height);
-            const x = (canvas.width - image.width * scale) / 2;
-            const y = (canvas.height - image.height * scale) / 2;
-            ctx.drawImage(image, x, y, image.width * scale, image.height * scale);
-            
-            // Store transform info
-            canvas.offsetX = x;
-            canvas.offsetY = y;
-            canvas.scale = scale;
-        }
-        
-        // Draw annotations
-        function drawAnnotations() {
-            drawImage();
-            annotations.forEach(ann => {
-                const color = document.getElementById('colorPicker').value;
-                ctx.strokeStyle = color;
-                ctx.lineWidth = 2;
-                
-                if (ann.type === 'bbox') {
-                    ctx.strokeRect(ann.x1, ann.y1, ann.x2 - ann.x1, ann.y2 - ann.y1);
-                    ctx.font = '12px Arial';
-                    ctx.fillStyle = color;
-                    ctx.fillText(ann.label, ann.x1, ann.y1 - 5);
-                }
+    });
+
+    canvas.addEventListener('mouseup', (e) => {
+        if (isDrawing) {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            const classVal = document.getElementById('classList').value;
+
+            annotations.push({
+                type: 'bbox',
+                x1: Math.min(startX, x),
+                y1: Math.min(startY, y),
+                x2: Math.max(startX, x),
+                y2: Math.max(startY, y),
+                label: classVal
             });
-        }
-        
-        // Canvas Events
-        canvas.addEventListener('mousedown', (e) => {
-            if (currentTool === 'bbox') {
-                isDrawing = true;
-                const rect = canvas.getBoundingClientRect();
-                startX = e.clientX - rect.left;
-                startY = e.clientY - rect.top;
-            }
-        });
-        
-        canvas.addEventListener('mousemove', (e) => {
-            if (isDrawing && currentTool === 'bbox') {
-                const rect = canvas.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                drawImage();
-                ctx.strokeStyle = document.getElementById('colorPicker').value;
-                ctx.lineWidth = 2;
-                ctx.strokeRect(startX, startY, x - startX, y - startY);
-            }
-        });
-        
-        canvas.addEventListener('mouseup', (e) => {
-            if (isDrawing && currentTool === 'bbox') {
-                const rect = canvas.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                const classVal = document.getElementById('classList').value;
-                
-                annotations.push({
-                    type: 'bbox',
-                    x1: Math.min(startX, x),
-                    y1: Math.min(startY, y),
-                    x2: Math.max(startX, x),
-                    y2: Math.max(startY, y),
-                    label: classVal
-                });
-                
-                drawAnnotations();
-                updateAnnotationsList();
-                isDrawing = false;
-            }
-        });
-        
-        // Tool buttons
-        document.getElementById('bboxTool').addEventListener('click', () => {
-            currentTool = 'bbox';
-            document.querySelectorAll('.tool-group button').forEach(b => b.classList.remove('active'));
-            event.target.classList.add('active');
-        });
-        
-        document.getElementById('undoBtn').addEventListener('click', () => {
-            annotations.pop();
+
             drawAnnotations();
             updateAnnotationsList();
-        });
-        
-        document.getElementById('clearBtn').addEventListener('click', () => {
-            annotations = [];
-            drawAnnotations();
-            updateAnnotationsList();
-        });
-        
-        // Save annotations
-        document.getElementById('saveBtn').addEventListener('click', async () => {
-            for (const ann of annotations) {
-                await fetch(`/annotation/api/workspaces/${workspaceId}/projects/${projectId}/images/${imageId}/annotations/`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        class_name: ann.class,
-                        annotation_type: 'bbox',
-                        x_min: ann.x1 / canvas.scale,
-                        y_min: ann.y1 / canvas.scale,
-                        x_max: ann.x2 / canvas.scale,
-                        y_max: ann.y2 / canvas.scale
-                    })
-                });
-            }
-            alert('Annotations saved!');
-        });
-        
-        // Auto-annotate
-        document.getElementById('autoAnnotate').addEventListener('click', async () => {
-            const res = await fetch(`/annotation/api/workspaces/${workspaceId}/projects/${projectId}/images/${imageId}/auto-annotate/`, {
-                method: 'POST'
-            });
-            const data = await res.json();
-            alert(`Auto-annotated ${data.total_created} objects`);
-            location.reload();
-        });
-        
-        // Update annotations list
-        function updateAnnotationsList() {
-            const list = document.getElementById('annotationsList');
-            list.innerHTML = annotations.map((ann, i) => `
-                <div class="annotation-item">
-                    <span>${ann.label}</span>
-                    <button class="delete-btn" onclick="deleteAnnotation(${i})">Delete</button>
-                </div>
-            `).join('');
-            
-            document.getElementById('totalAnn').textContent = annotations.length;
+            isDrawing = false;
         }
-        
-        function deleteAnnotation(index) {
-            annotations.splice(index, 1);
-            drawAnnotations();
-            updateAnnotationsList();
-        }
-        
-        // Initial setup
-        window.addEventListener('resize', resizeCanvas);
+    });
+
+    document.getElementById('bboxTool').addEventListener('click', (e) => {
+        currentTool = 'bbox';
+        document.querySelectorAll('.tool-group button').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+    });
+
+    document.getElementById('undoBtn').addEventListener('click', () => {
+        annotations.pop();
+        drawAnnotations();
         updateAnnotationsList();
-    </script>
-</body>
-</html>
+    });
+
+    document.getElementById('clearBtn').addEventListener('click', () => {
+        annotations = [];
+        drawAnnotations();
+        updateAnnotationsList();
+    });
+
+    document.getElementById('saveBtn').addEventListener('click', async () => {
+        for (const ann of annotations) {
+            await fetch(`/annotation/api/workspaces/${workspaceId}/projects/${projectId}/images/${imageId}/annotations/`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    class_name: ann.label,
+                    annotation_type: 'bbox',
+                    x_min: ann.x1 / canvas.scale,
+                    y_min: ann.y1 / canvas.scale,
+                    x_max: ann.x2 / canvas.scale,
+                    y_max: ann.y2 / canvas.scale
+                })
+            });
+        }
+        alert('Annotations saved!');
+    });
+
+    function updateAnnotationsList() {
+        const list = document.getElementById('annotationsList');
+
+        list.innerHTML = annotations.map((ann, i) => `
+            <div class="annotation-item">
+                <span>${ann.label}</span>
+                <button class="delete-btn" onclick="deleteAnnotation(${i})">Delete</button>
+            </div>
+        `).join('');
+
+        document.getElementById('totalAnn').textContent = annotations.length;
+    }
+
+    function deleteAnnotation(index) {
+        annotations.splice(index, 1);
+        drawAnnotations();
+        updateAnnotationsList();
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    updateAnnotationsList();
+</script>

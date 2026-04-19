@@ -1,19 +1,32 @@
 import os
 from pathlib import Path
+from dotenv import load_dotenv
 
+# =========================================================
+# BASE SETUP
+# =========================================================
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+load_dotenv()
 
 # =========================================================
 # CORE SETTINGS
 # =========================================================
 SECRET_KEY = os.getenv(
     "DJANGO_SECRET_KEY",
-    "django-insecure-1q2wy7u#h2o6w4k1s1v1j8a7u1j8m2n1k5"
+    "django-insecure-dev-key-change-in-production"
 )
 
-DEBUG = os.getenv("DJANGO_DEBUG", "True") == "True"
+DEBUG = os.getenv("DJANGO_DEBUG", "True").lower() == "true"
 
-ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "*").split(",")
+# IMPORTANT FIX
+if DEBUG:
+    ALLOWED_HOSTS = ["*"]
+else:
+    ALLOWED_HOSTS = os.getenv(
+        "DJANGO_ALLOWED_HOSTS",
+        "127.0.0.1,localhost"
+    ).split(",")
 
 # =========================================================
 # APPLICATIONS
@@ -30,10 +43,30 @@ INSTALLED_APPS = [
     "corsheaders",
     "django_celery_beat",
 
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+
     "dashboard",
     "api",
     "tasks",
 ]
+
+# =========================================================
+# AUTH / ALLAUTH
+# =========================================================
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+    "allauth.account.auth_backends.AuthenticationBackend",
+]
+
+SITE_ID = 1
+
+LOGIN_REDIRECT_URL = "/dashboard/"
+LOGOUT_REDIRECT_URL = "/login/"
+
+ACCOUNT_EMAIL_VERIFICATION = "none"
+ACCOUNT_AUTHENTICATION_METHOD = "username_email"
 
 # =========================================================
 # MIDDLEWARE
@@ -47,6 +80,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
 ROOT_URLCONF = "indusvision.urls"
@@ -75,7 +109,7 @@ WSGI_APPLICATION = "indusvision.wsgi.application"
 # =========================================================
 # DATABASE CONFIG
 # =========================================================
-USE_POSTGRES = os.getenv("USE_POSTGRES", "False") == "True"
+USE_POSTGRES = os.getenv("USE_POSTGRES", "False").lower() == "true"
 
 if USE_POSTGRES:
     DATABASES = {
@@ -84,9 +118,12 @@ if USE_POSTGRES:
             "NAME": os.getenv("POSTGRES_DB", "indusvision"),
             "USER": os.getenv("POSTGRES_USER", "postgres"),
             "PASSWORD": os.getenv("POSTGRES_PASSWORD", "postgres"),
-            "HOST": os.getenv("POSTGRES_HOST", "localhost"),
+            "HOST": os.getenv("POSTGRES_HOST", "127.0.0.1"),
             "PORT": os.getenv("POSTGRES_PORT", "5432"),
             "CONN_MAX_AGE": 300,
+            "OPTIONS": {
+                "connect_timeout": 5,
+            },
         }
     }
 else:
@@ -96,7 +133,7 @@ else:
             "NAME": BASE_DIR / "db.sqlite3",
             "OPTIONS": {
                 "timeout": 30,
-            }
+            },
         }
     }
 
@@ -105,6 +142,7 @@ else:
 # =========================================================
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
+
 USE_I18N = True
 USE_TZ = True
 
@@ -114,12 +152,6 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
-
-# =========================================================
-# AUTH / LOGIN
-# =========================================================
-LOGIN_REDIRECT_URL = "/"
-LOGOUT_REDIRECT_URL = "/login/"
 
 # =========================================================
 # DEFAULT PRIMARY KEY
@@ -153,7 +185,7 @@ CELERY_RESULT_BACKEND = os.getenv(
 ENABLE_PERIODIC_TASKS = os.getenv(
     "ENABLE_PERIODIC_TASKS",
     "False"
-) == "True"
+).lower() == "true"
 
 CELERY_BEAT_SCHEDULE = {}
 
@@ -170,7 +202,7 @@ if ENABLE_PERIODIC_TASKS:
     }
 
 # =========================================================
-# ML / OPENBLAS / NUMPY / TRANSFORMERS SAFETY
+# PERFORMANCE / ML SAFETY
 # =========================================================
 os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
 os.environ.setdefault("OMP_NUM_THREADS", "1")
@@ -178,8 +210,7 @@ os.environ.setdefault("MKL_NUM_THREADS", "1")
 os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 
 # =========================================================
-# SQLITE WAL MODE HELPER (OPTIONAL)
-# Better concurrency for SQLite
+# SQLITE WAL MODE (OPTIONAL BOOST)
 # =========================================================
 if not USE_POSTGRES:
     try:
@@ -206,4 +237,4 @@ LOGGING = {
         "handlers": ["console"],
         "level": "INFO",
     },
-}      
+}
