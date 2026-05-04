@@ -19,10 +19,10 @@ def api_sensor(request):
 
 
 @require_http_methods(["GET"])
-def api_annotation(request):
-    return JsonResponse({
-        "classes": ["person", "car", "truck"]
-    })
+def api_projects(request):
+    from dashboard.models import KnowledgeEntry
+    projects = KnowledgeEntry.objects.filter(knowledge_type='doc').values('id', 'title', 'created_at', 'content_preview')[:10]
+    return JsonResponse({'projects': list(projects)})
 
 
 @require_http_methods(["POST"])

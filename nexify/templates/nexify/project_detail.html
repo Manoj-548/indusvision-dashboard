@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="project-detail-container">
+    <div class="project-header">
+        <h1>{{ project.name }}</h1>
+        <p class="project-desc">{{ project.description }}</p>
+        
+        <div class="project-stats">
+            <div class="stat">
+                <span class="stat-value">{{ images|length }}</span>
+                <span class="stat-label">Images</span>
+            </div>
+            <div class="stat">
+                <span class="stat-value">{{ annotations_count }}</span>
+                <span class="stat-label">Annotations</span>
+            </div>
+            <div class="stat">
+                <span class="stat-value">{{ label_classes|length }}</span>
+                <span class="stat-label">Label Classes</span>
+            </div>
+        </div>
+        
+        <div class="project-actions">
+            <a href="/nexify/project/{{ project.id }}/tool/" class="btn btn-primary">
+                <i class="icon-pencil"></i> Annotate
+            </a>
+            <a href="/nexify/augment/{{ project.id }}/" class="btn btn-secondary">
+                <i class="icon-plus"></i> Augment
+            </a>
+            <a href="/nexify/export/{{ project.id }}/" class="btn btn-secondary">
+                <i class="icon-download"></i> Export
+            </a>
+        </div>
+    </div>
+
+    <div class="upload-section">
+        <h3>Upload Images</h3>
+        <form id="uploadForm" enctype="multipart/form-data">
+            <input type="file" name="files" multiple accept="image/*" id="fileInput">
+            <input type="hidden" name="project_id" value="{{ project.id }}">
+            <button type="submit" class="btn btn-upload">Upload</button>
+        </form>
+        <div id="uploadProgress"></div>
+    </div>
+
+    <div class="images-grid">
+        <h3>Project Images ({{ images|length }})</h3>
+        {% for img in images %}
+        <div class="image-card">
+            <img src="{{ img.url }}" alt="{{ img.name }}">
+            <div class="image-info">
+                <span class="image-name">{{ img.name }}</span>
+                <span class="image-dims">{{ img.width }}x{{ img.height }}</span>
+            </div>
+            <a href="/nexify/api/annotations/{{ img.id }}/" class="btn-view-annotations">View Annotations</a>
+        </div>
+        {% empty %}
+        <p class="no-images">No images yet. Upload some images to get started.</p>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+.project-detail-container {
+    padding: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.project-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+}
+
+.project-header h1 {
+    margin: 0 0 10px 0;
+    font-size: 2rem;
+}
+
+.project-desc {
+    opacity: 0.9;
+    margin-bottom: 20px;
+}
+
+.project-stats {
+    display: flex;
+    gap: 30px;
+    margin-bottom: 20px;
+}
+
+.stat {
+    text-align: center;
+}
+
+.stat-value {
+    display: block;
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+.project-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn {
+    padding: 10px 20px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.btn-primary {
+    background: white;
+    color: #667eea;
+}
+
+.btn-secondary {
+    background: rgba(255,255,255,0.2);
+    color: white;
+}
+
+.upload-section {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+}
+
+.upload-section h3 {
+    margin: 0 0 15px 0;
+}
+
+#fileInput {
+    margin-right: 10px;
+}
+
+.btn-upload {
+    background: #667eea;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.images-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.image-card {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.image-card img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+}
+
+.image-info {
+    padding: 10px;
+}
+
+.image-name {
+    display: block;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.image-dims {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.btn-view-annotations {
+    display: block;
+    padding: 8px;
+    text-align: center;
+    background: #f5f5f5;
+    color: #333;
+    text-decoration: none;
+}
+
+.btn-view-annotations:hover {
+    background: #e5e5e5;
+}
+
+.no-images {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: #666;
+    padding: 40px;
+}
+</style>
+
+<script>
+document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData();
+    const files = document.getElementById('fileInput').files;
+    
+    for (let i = 0; i < files.length; i++) {
+        formData.append('files', files[i]);
+    }
+    formData.append('project_id', '{{ project.id }}');
+    
+    const progress = document.getElementById('uploadProgress');
+    progress.innerHTML = 'Uploading...';
+    
+    try {
+        const response = await fetch('/nexify/api/upload-folder/', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await response.json();
+        progress.innerHTML = `Uploaded ${data.count} images!`;
+        setTimeout(() => location.reload(), 1000);
+    } catch (err) {
+        progress.innerHTML = 'Upload failed: ' + err.message;
+    }
+});
+</script>
+{% endblock %}

@@ -16,18 +16,17 @@ html { scroll-behavior: smooth; }
   <div class="container">
   <img src="{% static 'logo/logo.png' %}" alt="IndusVision Logo" class="navbar-brand me-3 logo-img">
     <div class="navbar-nav ms-auto">
-      <a class="nav-link" href="/dashboard/">Home</a>
+      <a class="nav-link {% if request.resolver_match.url_name == 'dashboard:home' %}active{% endif %}" href="{% url 'dashboard:home' %}">Home</a>
       {% if user.is_authenticated %}
-      <a class="nav-link" href="/admin/">Admin</a>
-
-        <form method="post" action="/dashboard/logout/" style="display: inline;">
-
-        {% csrf_token %}
-        <button type="submit" class="nav-link btn btn-link">Logout</button>
-      </form>
+        <a class="nav-link" href="/admin/">Admin</a>
+        <form method="post" action="{% url 'logout' %}" style="display: inline;">
+          {% csrf_token %}
+          <button type="submit" class="nav-link btn btn-link text-light p-0">Logout</button>
+        </form>
       {% else %}
-      <a class="nav-link" href="/login/">Login</a>
+      <a class="nav-link" href="{% url 'login' %}">Login</a>
       {% endif %}
+<a class="nav-link" href="/nexify/">Nexify</a>
     </div>
   </div>
 </nav>
@@ -38,22 +37,22 @@ html { scroll-behavior: smooth; }
       <h6>Navigation</h6>
       <ul class="nav flex-column">
         <li class="nav-item">
-          <a class="nav-link text-white" href="/dashboard/">Home</a>
+          <a class="nav-link text-white {% if request.resolver_match and request.resolver_match.url_name == 'dashboard:home' %}active{% endif %}" href="{% url 'dashboard:home' %}">Home</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link text-white" href="/dashboard/models/">Models</a>
+          <a class="nav-link text-white" href="{% url 'dashboard:models' %}">Models</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link text-white" href="/dashboard/unified/">Unified</a>
+          <a class="nav-link text-white" href="{% url 'dashboard:unified' %}">Unified</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link text-white" href="/dashboard/annotation/">Annotation</a>
+          <a class="nav-link text-white" href="{% url 'dashboard:annotation' %}">Annotation</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link text-white" href="/dashboard/agent/">RAG</a>
+          <a class="nav-link text-white" href="{% url 'dashboard:rag' %}">RAG</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link text-white" href="/dashboard/projects/">Projects</a>
+          <a class="nav-link text-white" href="{% url 'dashboard:projects_list' %}">Projects</a>
         </li>
         <li class="nav-item">
           <a class="nav-link text-white" href="/api/sensor/">Sensors</a>
@@ -62,13 +61,16 @@ html { scroll-behavior: smooth; }
           <a class="nav-link text-white" href="/api/camera/">Camera</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link text-white" href="/api/annotation/">Annotation API</a>
+          <a class="nav-link text-white" href="/api/annotation/">API</a>
         </li>
         <li class="nav-item">
           <a class="nav-link text-white" href="/api/automation/">Automation</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link text-white" onclick="loadKnowledge()">Knowledge</a>
+          <a class="nav-link text-white" href="{% url 'dashboard:knowledge' %}">Knowledge</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link text-white" href="/nexify/">🧠 Nexify</a>
         </li>
       </ul>
 
@@ -83,7 +85,7 @@ html { scroll-behavior: smooth; }
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 function loadKnowledge() {
-  window.location.href = '/dashboard/#knowledge';
+  window.location.href = '{% url "dashboard:knowledge" %}';
 }
 </script>
 {% block extra_js %}{% endblock %}

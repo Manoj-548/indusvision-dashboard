@@ -2,60 +2,111 @@
 {% block title %}IndusVision Login{% endblock %}
 {% block sidebar %}{% endblock %}
 {% block content %}
-<div class="row justify-content-center mt-5">
+<div class="container mt-5">
+  <div class="row justify-content-center">
     <div class="col-md-6 col-lg-4">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <h3 class="card-title mb-4 text-primary transition-all" style="transition: all 0.3s ease;">IndusVision Login</h3>
-                {% if form.non_field_errors %}
-                    <div class="alert alert-danger">
-                        {{ form.non_field_errors }}
-                    </div>
-                {% endif %}
-                <form method="post" novalidate>
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label for="{{ form.username.id_for_label }}" class="form-label">User ID</label>
-                        {{ form.username }}
-                        {% if form.username.errors %}
-                            <div class="text-danger">
-                                {{ form.username.errors }}
-                            </div>
-                        {% endif %}
-                    </div>
-                    <div class="mb-3">
-                        <label for="{{ form.password.id_for_label }}" class="form-label">Password</label>
-                        {{ form.password }}
-                        {% if form.password.errors %}
-                            <div class="text-danger">
-                                {{ form.password.errors }}
-                            </div>
-                        {% endif %}
-                    </div>
-                    <div class="mb-3 form-check">
-                        <input class="form-check-input" type="radio" name="register" id="login" value="0" checked>
-                        <label class="form-check-label" for="login">
-                            Login
-                        </label>
-                    </div>
-                    <div class="mb-3 form-check">
-                        <input class="form-check-input" type="radio" name="register" id="register" value="1">
-                        <label class="form-check-label" for="register">
-                            Create New Account
-                        </label>
-                    </div>
-                    {% if register %}
-                    <div class="mb-3">
-                        <label for="{{ form.password2.id_for_label }}" class="form-label">Confirm Password</label>
-                        {{ form.password2 }}
-                    </div>
-                    {% endif %}
-                    <button type="submit" class="btn btn-primary w-100">{% if register %}Create & Sign In{% else %}Sign In{% endif %}</button>
-                </form>
+      <div class="card shadow-lg border-0 rounded-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+        <div class="card-body p-5">
+          <div class="text-center mb-4">
+            <h1 class="display-5 fw-bold mb-1">IndusVision</h1>
+            <p class="lead opacity-75">Welcome back</p>
+          </div>
+          
+          {% if form.non_field_errors %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+              {{ form.non_field_errors }}
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
             </div>
+          {% endif %}
+
+          <form method="post" novalidate class="needs-validation">
+            {% csrf_token %}
+            
+            <div class="mb-4">
+              <label for="{{ form.username.id_for_label }}" class="form-label fw-semibold">Username</label>
+              <input type="text" name="{{ form.username.name }}" id="{{ form.username.id_for_label }}" value="{{ form.username.value|default:'' }}" class="form-control form-control-lg rounded-3 shadow-sm" {% if form.username.field.required %}required{% endif %}>
+              {% if form.username.errors %}
+                <div class="invalid-feedback d-block">
+                  {{ form.username.errors }}
+                </div>
+              {% endif %}
+            </div>
+
+            <div class="mb-4">
+              <label for="{{ form.password.id_for_label }}" class="form-label fw-semibold">Password</label>
+              <input type="password" name="{{ form.password.name }}" id="{{ form.password.id_for_label }}" class="form-control form-control-lg rounded-3 shadow-sm" {% if form.password.field.required %}required{% endif %}>
+              {% if form.password.errors %}
+                <div class="invalid-feedback d-block">
+                  {{ form.password.errors }}
+                </div>
+              {% endif %}
+            </div>
+
+<div class="mb-4 d-flex gap-3">
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="user_type" id="adminMode" value="admin" checked>
+                <label class="form-check-label text-white-50" for="adminMode">
+                  <small>🔧 Admin</small>
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="user_type" id="userMode" value="user">
+                <label class="form-check-label text-white-50" for="userMode">
+                  <small>👤 Annotator</small>
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="user_type" id="viewerMode" value="viewer">
+                <label class="form-check-label text-white-50" for="viewerMode">
+                  <small>👁️ Viewer</small>
+                </label>
+              </div>
+            </div>
+
+            {% if register %}
+            <div class="mb-4">
+              <label for="{{ form.password2.id_for_label }}" class="form-label fw-semibold">Confirm Password</label>
+              <input type="password" name="{{ form.password2.name }}" id="{{ form.password2.id_for_label }}" class="form-control form-control-lg rounded-3 shadow-sm" {% if form.password2.field.required %}required{% endif %}>
+            </div>
+            {% endif %}
+
+            <button type="submit" class="btn btn-light btn-lg w-100 rounded-3 fw-semibold transition-all" style="transition: all 0.3s ease;">
+              {% if register %}Create & Sign In{% else %}Sign In Securely{% endif %}
+            </button>
+          </form>
+
+          <div class="text-center mt-4">
+            <small class="text-white-50">AI-Powered Vision Platform © 2026</small>
+          </div>
         </div>
+      </div>
     </div>
+  </div>
 </div>
+
+<style>
+:root {
+  --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0,0, 0.1), 0 10px 10px -5px rgba(0, 0,0, 0.04);
+}
+
+.card {
+  backdrop-filter: blur(10px);
+}
+
+.form-control:focus {
+  border-color: rgba(255,255,255,0.5);
+  box-shadow: 0 0 0 0.25rem rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.95);
+}
+
+.btn {
+  font-size: 1.1rem;
+  letter-spacing: 0.5px;
+}
+
+.transition-all {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+</style>
 {% endblock %}
-
-

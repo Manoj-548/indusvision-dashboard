@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Workspaces</h2>
+    <button class="btn btn-primary" onclick="createWorkspace()">New Workspace</button>
+  </div>
+
+  <div class="row">
+    {% for workspace in workspaces %}
+    <div class="col-md-6 col-lg-4 mb-4">
+      <div class="card">
+        <div class="card-body">
+          <h6>{{ workspace.name }}</h6>
+          <p>{{ workspace.description }}</p>
+          
+          <!-- Convert RelatedManager to list for template -->
+{% with workspace.projects.all as projects_list %}
+          <div>Projects ({{ projects_list|length }}):
+            <ul>
+              {% for project in projects_list %}
+              <li><a href="{% url 'nexify:project_detail' project.pk %}">{{ project.name }}</a></li>
+              {% empty %}
+              <li>No projects - <a href="#">Create</a></li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endwith %}
+          
+          <div>Created: {{ workspace.created_at }}</div>
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+      <div class="alert alert-info">
+        No workspaces. <button class="btn btn-primary btn-sm" onclick="createWorkspace()">Create first</button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <script>
+  function createWorkspace() {
+    if (confirm('Create demo workspace?')) {
+      fetch('/nexify/api/workspace/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({name: 'Demo Workspace'})
+      }).then(() => location.reload());
+    }
+  }
+  </script>
+</div>
+{% endblock %}

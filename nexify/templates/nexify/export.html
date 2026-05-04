@@ -1,0 +1,462 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="export-container">
+    <div class="export-header">
+        <h1>{{ project.name }} - Export Dataset</h1>
+        <p>Download your annotated dataset in various formats for mainstream ML frameworks</p>
+    </div>
+
+    <div class="export-stats">
+        <div class="stat-card">
+            <div class="stat-value">{{ total_images }}</div>
+            <div class="stat-label">Total Images</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ total_annotations }}</div>
+            <div class="stat-label">Total Annotations</div>
+        </div>
+    </div>
+
+    <div class="export-formats">
+        <h3>Select Export Format</h3>
+        
+        <div class="format-grid">
+            <!-- YOLO Format -->
+            <label class="format-card">
+                <input type="radio" name="format" value="yolo">
+                <div class="format-content">
+                    <div class="format-icon">Y</div>
+                    <div class="format-name">YOLO</div>
+                    <div class="format-desc">Darknet - txt per image</div>
+                </div>
+            </label>
+            
+            <!-- COCO JSON Format -->
+            <label class="format-card">
+                <input type="radio" name="format" value="coco" checked>
+                <div class="format-content">
+                    <div class="format-icon">C</div>
+                    <div class="format-name">COCO JSON</div>
+                    <div class="format-desc">Common Objects in Context</div>
+                </div>
+            </label>
+            
+            <!-- Pascal VOC Format -->
+            <label class="format-card">
+                <input type="radio" name="format" value="voc">
+                <div class="format-content">
+                    <div class="format-icon">V</div>
+                    <div class="format-name">Pascal VOC</div>
+                    <div class="format-desc">XML annotations</div>
+                </div>
+            </label>
+            
+            <!-- CSV Format -->
+            <label class="format-card">
+                <input type="radio" name="format" value="csv">
+                <div class="format-content">
+                    <div class="format-icon">S</div>
+                    <div class="format-name">CSV</div>
+                    <div class="format-desc">Comma-separated</div>
+                </div>
+            </label>
+            
+            <!-- JSON Format -->
+            <label class="format-card">
+                <input type="radio" name="format" value="json">
+                <div class="format-content">
+                    <div class="format-icon">J</div>
+                    <div class="format-name">JSON</div>
+                    <div class="format-desc">Plain JSON</div>
+                </div>
+            </label>
+            
+            <!-- YAML Format -->
+            <label class="format-card">
+                <input type="radio" name="format" value="yaml">
+                <div class="format-content">
+                    <div class="format-icon">Y</div>
+                    <div class="format-name">YAML</div>
+                    <div class="format-desc">Config + labels</div>
+                </div>
+            </label>
+            
+            <!-- PyTorch Format -->
+            <label class="format-card">
+                <input type="radio" name="format" value="torch">
+                <div class="format-content">
+                    <div class="format-icon">P</div>
+                    <div class="format-name">PyTorch</div>
+                    <div class="format-desc">Tensor .pt file</div>
+                </div>
+            </label>
+            
+            <!-- TensorFlow Format -->
+            <label class="format-card">
+                <input type="radio" name="format" value="tfrecord">
+                <div class="format-content">
+                    <div class="format-icon">T</div>
+                    <div class="format-name">TensorFlow</div>
+                    <div class="format-desc">TFRecord format</div>
+                </div>
+            </label>
+            
+            <!-- MXNet Format -->
+            <label class="format-card">
+                <input type="radio" name="format" value="mxrec">
+                <div class="format-content">
+                    <div class="format-icon">M</div>
+                    <div class="format-name">MXNet</div>
+                    <div class="format-desc">RecordIO format</div>
+                </div>
+            </label>
+            
+            <!-- Detectron2 Format -->
+            <label class="format-card">
+                <input type="radio" name="format" value="detectron2">
+                <div class="format-content">
+                    <div class="format-icon">D</div>
+                    <div class="format-name">Detectron2</div>
+                    <div class="format-desc">COCO + transforms</div>
+                </div>
+            </label>
+            
+            <!-- OpenMMLab Format -->
+            <label class="format-card">
+                <input type="radio" name="format" value="openmmlab">
+                <div class="format-content">
+                    <div class="format-icon">O</div>
+                    <div class="format-name">OpenMMLab</div>
+                    <div class="format-desc">MMDetection</div>
+                </div>
+            </label>
+            
+            <!-- Albumentations Format -->
+            <label class="format-card">
+                <input type="radio" name="format" value="albumentations">
+                <div class="format-content">
+                    <div class="format-icon">A</div>
+                    <div class="format-name">Albumentations</div>
+                    <div class="format-desc">JSON + transforms</div>
+                </div>
+            </label>
+        </div>
+
+        <div class="export-options">
+            <label>
+                <input type="checkbox" name="include_images" checked>
+                Include images in export (zip)
+            </label>
+            <label>
+                <input type="checkbox" name="approved_only">
+                Export approved annotations only
+            </label>
+            <label>
+                <input type="checkbox" name="split_data">
+                Split train/val/test (80/10/10)
+            </label>
+        </div>
+
+        <button id="exportBtn" class="btn-export">Download Dataset</button>
+        <div id="exportProgress"></div>
+    </div>
+
+    <div class="versions-section">
+        <h3>Dataset Versions</h3>
+        {% if versions %}
+        <div class="versions-list">
+            {% for v in versions %}
+            <div class="version-card">
+                <div class="version-info">
+                    <span class="version-name">{{ v.name }}</span>
+                    <span class="version-date">{{ v.created_at }}</span>
+                </div>
+                <button class="btn-download">Download</button>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="no-versions">No versions yet. Create your first export!</p>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.export-container {
+    padding: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.export-header {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    padding: 30px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+}
+
+.export-header h1 {
+    margin: 0 0 10px 0;
+}
+
+.export-stats {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    flex: 1;
+    background: white;
+    padding: 25px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.stat-value {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #f5576c;
+}
+
+.stat-label {
+    color: #666;
+}
+
+.export-formats {
+    background: white;
+    padding: 25px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+}
+
+.export-formats h3 {
+    margin: 0 0 20px 0;
+}
+
+.format-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.format-card {
+    cursor: pointer;
+}
+
+.format-card input {
+    display: none;
+}
+
+.format-card input:checked + .format-content {
+    border-color: #f5576c;
+    background: #fff0f3;
+    transform: scale(1.02);
+}
+
+.format-content {
+    padding: 15px 10px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    text-align: center;
+    transition: all 0.2s;
+}
+
+.format-content:hover {
+    border-color: #f5576c;
+    transform: translateY(-2px);
+}
+
+.format-icon {
+    width: 30px;
+    height: 30px;
+    margin: 0 auto 8px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 50%;
+    color: white;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+}
+
+.format-name {
+    font-weight: bold;
+    font-size: 0.95rem;
+    margin-bottom: 5px;
+}
+
+.format-desc {
+    font-size: 0.75rem;
+    color: #666;
+}
+
+.export-options {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.export-options label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 8px 15px;
+    background: #f8f9fa;
+    border-radius: 20px;
+}
+
+.btn-export {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    border: none;
+    padding: 14px 35px;
+    border-radius: 6px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.btn-export:hover {
+    transform: scale(1.02);
+}
+
+#exportProgress {
+    margin-top: 15px;
+    font-weight: 500;
+    color: #f5576c;
+}
+
+.versions-section {
+    background: white;
+    padding: 25px;
+    border-radius: 8px;
+}
+
+.versions-section h3 {
+    margin: 0 0 20px 0;
+}
+
+.versions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.version-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 6px;
+}
+
+.version-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.version-name {
+    font-weight: 500;
+}
+
+.version-date {
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.btn-download {
+    background: #f5576c;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.no-versions {
+    text-align: center;
+    color: #999;
+    padding: 20px;
+}
+</style>
+
+<script>
+document.getElementById('exportBtn').addEventListener('click', async () => {
+    const format = document.querySelector('input[name="format"]:checked').value;
+    const includeImages = document.querySelector('input[name="include_images"]').checked;
+    const approvedOnly = document.querySelector('input[name="approved_only"]').checked;
+    const splitData = document.querySelector('input[name="split_data"]').checked;
+    
+    const btn = document.getElementById('exportBtn');
+    const progress = document.getElementById('exportProgress');
+    
+    btn.disabled = true;
+    progress.textContent = 'Preparing export...';
+    
+    try {
+        const params = new URLSearchParams({
+            format: format,
+            images: includeImages,
+            approved: approvedOnly,
+            split: splitData
+        });
+        
+        const response = await fetch(`/nexify/api/export/{{ project.id }}/?${params}`);
+        
+        // Create downloadable file based on format
+        let content, mimeType, extension;
+        
+        if (['coco', 'json', 'yaml', 'torch', 'detectron2', 'albumentations', 'openmmlab'].includes(format)) {
+            mimeType = 'application/json';
+            extension = format === 'yaml' ? 'yaml' : (format === 'torch' ? 'pt' : 'json');
+        } else if (format === 'voc') {
+            mimeType = 'application/xml';
+            extension = 'xml';
+        } else if (format === 'csv') {
+            mimeType = 'text/csv';
+            extension = 'csv';
+        } else if (format === 'yolo') {
+            mimeType = 'text/plain';
+            extension = 'txt';
+        } else if (format === 'tfrecord') {
+            mimeType = 'application/octet-stream';
+            extension = 'tfrecord';
+        } else if (format === 'mxrec') {
+            mimeType = 'application/octet-stream';
+            extension = 'idx';
+        } else {
+            mimeType = 'text/plain';
+            extension = 'txt';
+        }
+        
+        const data = await response.text();
+        const blob = new Blob([data], {type: mimeType});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `dataset_{{ project.id }}.${extension}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        progress.textContent = `Dataset exported as ${format.toUpperCase()}!`;
+        setTimeout(() => location.reload(), 2000);
+    } catch (err) {
+        progress.textContent = 'Export error: ' + err.message;
+    } finally {
+        btn.disabled = false;
+    }
+});
+</script>
+{% endblock %}

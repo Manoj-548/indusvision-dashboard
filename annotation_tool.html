@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Comprehensive Annotation Tool</title>
+  <link href="https://fonts.googleapis.com/css?family=Roboto:400,700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: #f4f6fa;
+      margin: 0;
+      padding: 0;
+      color: #222;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 30px auto;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      padding: 32px 40px 40px 40px;
+    }
+    h1 {
+      text-align: center;
+      font-weight: 700;
+      margin-bottom: 24px;
+      color: #2a3b8f;
+    }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      justify-content: center;
+      margin-bottom: 18px;
+    }
+    .toolbar button, .toolbar select {
+      background: #2a3b8f;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 10px 18px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .toolbar button.active, .toolbar button:hover {
+      background: #4e5ed3;
+    }
+    .toolbar select {
+      background: #e4e8f7;
+      color: #2a3b8f;
+      font-weight: 700;
+    }
+    .canvas-container {
+      position: relative;
+      margin: 0 auto 18px auto;
+      background: #e4e8f7;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      width: 900px;
+      height: 600px;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: #fff;
+      border-radius: 8px;
+    }
+    .xy-coords {
+      position: absolute;
+      right: 18px;
+      bottom: 18px;
+      background: #2a3b8f;
+      color: #fff;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 1rem;
+      pointer-events: none;
+      opacity: 0.92;
+    }
+    .rag-panel {
+      margin-top: 24px;
+      background: #f7f9ff;
+      border-radius: 8px;
+      padding: 18px 24px;
+      box-shadow: 0 2px 8px rgba(42,59,143,0.06);
+    }
+    .rag-panel label {
+      font-weight: 700;
+      color: #2a3b8f;
+    }
+    .rag-panel textarea {
+      width: 100%;
+      min-height: 60px;
+      border-radius: 6px;
+      border: 1px solid #bfc7e0;
+      padding: 8px;
+      font-size: 1rem;
+      margin-top: 6px;
+      margin-bottom: 10px;
+      resize: vertical;
+    }
+    .rag-panel button {
+      background: #2a3b8f;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 18px;
+      font-size: 1rem;
+      cursor: pointer;
+      margin-right: 8px;
+    }
+    .rag-panel .suggestions {
+      margin-top: 10px;
+      color: #333;
+      font-size: 1rem;
+    }
+    @media (max-width: 1000px) {
+      .container, .canvas-container {
+        width: 98vw;
+        padding: 8px;
+      }
+      .canvas-container {
+        height: 60vw;
+        min-height: 300px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Comprehensive Annotation Tool</h1>
+    <div class="toolbar">
+      <button id="tool-bbox" class="active">Bounding Box</button>
+      <button id="tool-polygon">Polygon</button>
+      <button id="tool-keypoint">Keypoint</button>
+      <button id="tool-sam">SAM AI</button>
+      <button id="tool-smart-polygon">Smart Polygon</button>
+      <button id="undo-btn">Undo (Ctrl+Z)</button>
+      <button id="redo-btn">Redo (Ctrl+Y)</button>
+      <button id="delete-btn">Delete Last</button>
+      <select id="color-picker">
+        <option value="#2a3b8f">Blue</option>
+        <option value="#e4572e">Red</option>
+        <option value="#17b978">Green</option>
+        <option value="#f7b801">Yellow</option>
+        <option value="#a259f7">Purple</option>
+      </select>
+    </div>
+    <div class="canvas-container">
+      <canvas id="annotation-canvas" width="900" height="600"></canvas>
+      <div class="xy-coords" id="xy-coords">X: 0, Y: 0</div>
+    </div>
+    <div class="rag-panel">
+      <label for="rag-prompt">AI Suggestion Feedback (RAG):</label>
+      <textarea id="rag-prompt" placeholder="Describe what you want to detect, e.g. 'Find all cars in the image.'"></textarea>
+      <button id="rag-submit">Suggest</button>
+      <div class="suggestions" id="rag-suggestions"></div>
+    </div>
+  </div>
+  <script>
+    // --- Annotation Tool State ---
+    const canvas = document.getElementById('annotation-canvas');
+    const ctx = canvas.getContext('2d');
+    const coordsDiv = document.getElementById('xy-coords');
+    let tool = 'bbox';
+    let color = '#2a3b8f';
+    let drawing = false;
+    let startPt = null;
+    let currentPts = [];
+    let annotations = [];
+    let undoStack = [];
+    let redoStack = [];
+    let keypointRadius = 6;
+    let samActive = false;
+    let smartPolygonActive = false;
+
+    // --- Tool Selection ---
+    document.getElementById('tool-bbox').onclick = () => setTool('bbox');
+    document.getElementById('tool-polygon').onclick = () => setTool('polygon');
+    document.getElementById('tool-keypoint').onclick = () => setTool('keypoint');
+    document.getElementById('tool-sam').onclick = () => setTool('sam');
+    document.getElementById('tool-smart-polygon').onclick = () => setTool('smart-polygon');
+    document.getElementById('color-picker').onchange = e => color = e.target.value;
+
+    function setTool(t) {
+      tool = t;
+      samActive = (t === 'sam');
+      smartPolygonActive = (t === 'smart-polygon');
+      document.querySelectorAll('.toolbar button').forEach(btn => btn.classList.remove('active'));
+      if (t === 'bbox') document.getElementById('tool-bbox').classList.add('active');
+      if (t === 'polygon') document.getElementById('tool-polygon').classList.add('active');
+      if (t === 'keypoint') document.getElementById('tool-keypoint').classList.add('active');
+      if (t === 'sam') document.getElementById('tool-sam').classList.add('active');
+      if (t === 'smart-polygon') document.getElementById('tool-smart-polygon').classList.add('active');
+      resetDrawing();
+    }
+
+    // --- Drawing Logic ---
+    canvas.onmousedown = e => {
+      const pt = getCursorPos(e);
+      if (tool === 'bbox') {
+        drawing = true;
+        startPt = pt;
+      } else if (tool === 'polygon' || tool === 'smart-polygon') {
+        if (!drawing) {
+          drawing = true;
+          currentPts = [pt];
+        } else {
+          currentPts.push(pt);
+        }
+      } else if (tool === 'keypoint') {
+        annotations.push({type: 'keypoint', pts: [pt], color});
+        pushUndo();
+        redraw();
+      } else if (tool === 'sam') {
+        // Simulate AI annotation (placeholder)
+        annotations.push({type: 'sam', pts: [pt], color});
+        pushUndo();
+        redraw();
+      }
+    };
+    canvas.onmousemove = e => {
+      const pt = getCursorPos(e);
+      coordsDiv.textContent = `X: ${pt.x}, Y: ${pt.y}`;
+      if (drawing && (tool === 'bbox' || tool === 'polygon' || tool === 'smart-polygon')) {
+        redraw(pt);
+      }
+    };
+    canvas.onmouseup = e => {
+      if (tool === 'bbox' && drawing) {
+        const pt = getCursorPos(e);
+        annotations.push({type: 'bbox', pts: [startPt, pt], color});
+        drawing = false;
+        startPt = null;
+        pushUndo();
+        redraw();
+      } else if ((tool === 'polygon' || tool === 'smart-polygon') && drawing) {
+        // Double click to finish polygon
+        if (e.detail === 2 && currentPts.length > 2) {
+          if (tool === 'smart-polygon') {
+            // Simulate smart polygon AI refinement
+            const refined = smartPolygonRefine(currentPts);
+            annotations.push({type: 'smart-polygon', pts: refined, color});
+          } else {
+            annotations.push({type: 'polygon', pts: currentPts.slice(), color});
+          }
+          drawing = false;
+          currentPts = [];
+          pushUndo();
+          redraw();
+        }
+      }
+    };
+    canvas.onmouseleave = () => { if (drawing) redraw(); };
+
+    function getCursorPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: Math.round((e.clientX - rect.left) * (canvas.width / rect.width)),
+        y: Math.round((e.clientY - rect.top) * (canvas.height / rect.height))
+      };
+    }
+
+    function redraw(cursorPt) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // Draw all annotations
+      for (const ann of annotations) {
+        ctx.strokeStyle = ann.color;
+        ctx.fillStyle = ann.color + '33';
+        ctx.lineWidth = 2;
+        if (ann.type === 'bbox') {
+          const [a, b] = ann.pts;
+          ctx.strokeRect(a.x, a.y, b.x - a.x, b.y - a.y);
+        } else if (ann.type === 'polygon' || ann.type === 'smart-polygon') {
+          ctx.beginPath();
+          ann.pts.forEach((pt, i) => {
+            if (i === 0) ctx.moveTo(pt.x, pt.y);
+            else ctx.lineTo(pt.x, pt.y);
+          });
+          ctx.closePath();
+          ctx.stroke();
+          ctx.fill();
+        } else if (ann.type === 'keypoint') {
+          const [pt] = ann.pts;
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, keypointRadius, 0, 2 * Math.PI);
+          ctx.fill();
+          ctx.stroke();
+        } else if (ann.type === 'sam') {
+          // Simulate AI mask
+          const [pt] = ann.pts;
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, 30, 0, 2 * Math.PI);
+          ctx.stroke();
+        }
+      }
+      // Draw current drawing
+      if (drawing) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        if (tool === 'bbox' && startPt && cursorPt) {
+          ctx.strokeRect(startPt.x, startPt.y, cursorPt.x - startPt.x, cursorPt.y - startPt.y);
+        } else if ((tool === 'polygon' || tool === 'smart-polygon') && currentPts.length) {
+          ctx.beginPath();
+          currentPts.forEach((pt, i) => {
+            if (i === 0) ctx.moveTo(pt.x, pt.y);
+            else ctx.lineTo(pt.x, pt.y);
+          });
+          if (cursorPt) ctx.lineTo(cursorPt.x, cursorPt.y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    function resetDrawing() {
+      drawing = false;
+      startPt = null;
+      currentPts = [];
+      redraw();
+    }
+
+    // --- Undo/Redo/Delete ---
+    function pushUndo() {
+      undoStack.push(JSON.stringify(annotations));
+      redoStack = [];
+    }
+    function undo() {
+      if (undoStack.length) {
+        redoStack.push(JSON.stringify(annotations));
+        annotations = JSON.parse(undoStack.pop());
+        redraw();
+      }
+    }
+    function redo() {
+      if (redoStack.length) {
+        undoStack.push(JSON.stringify(annotations));
+        annotations = JSON.parse(redoStack.pop());
+        redraw();
+      }
+    }
+    document.getElementById('undo-btn').onclick = undo;
+    document.getElementById('redo-btn').onclick = redo;
+    document.getElementById('delete-btn').onclick = () => {
+      if (annotations.length) {
+        pushUndo();
+        annotations.pop();
+        redraw();
+      }
+    };
+    document.addEventListener('keydown', e => {
+      if (e.ctrlKey && e.key === 'z') undo();
+      if (e.ctrlKey && e.key === 'y') redo();
+    });
+
+    // --- Smart Polygon AI (Simulated) ---
+    function smartPolygonRefine(pts) {
+      // Simulate AI refinement: smooth polygon (placeholder)
+      // In real app, call backend AI model here
+      return pts.map((pt, i) => ({
+        x: Math.round(pt.x + 5 * Math.sin(i)),
+        y: Math.round(pt.y + 5 * Math.cos(i))
+      }));
+    }
+
+    // --- RAG Suggestion Tool (Simulated) ---
+    document.getElementById('rag-submit').onclick = async () => {
+      const prompt = document.getElementById('rag-prompt').value.trim();
+      const suggestionsDiv = document.getElementById('rag-suggestions');
+      suggestionsDiv.textContent = 'Thinking...';
+      // Simulate async RAG call
+      setTimeout(() => {
+        suggestionsDiv.innerHTML =
+          `<b>Suggestions for:</b> "${prompt}"<br>` +
+          `<ul><li>Detected 2 cars at (120, 200), (400, 210)</li><li>Detected 1 person at (300, 400)</li></ul>`;
+      }, 1200);
+    };
+
+    // --- Initial Draw ---
+    redraw();
+  </script>
+</body>
+</html>

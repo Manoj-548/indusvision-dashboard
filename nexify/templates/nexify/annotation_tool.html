@@ -1,0 +1,489 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="annotation-tool-container">
+    <div class="tool-header">
+        <div class="project-info">
+            <h1>{{ project.name }} - Annotation Tool</h1>
+        </div>
+        
+        <div class="tool-controls">
+            <div class="tool-selector">
+                <button class="tool-btn active" data-tool="bbox" title="Bounding Box">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <rect x="3" y="3" width="18" height="18" rx="2"/>
+                    </svg>
+                </button>
+                <button class="tool-btn" data-tool="polygon" title="Polygon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <polygon points="12,2 22,8.5 22,15.5 12,22 2,15.5 2,8.5"/>
+                    </svg>
+                </button>
+                <button class="tool-btn" data-tool="point" title="Keypoint">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <circle cx="12" cy="12" r="3"/>
+                        <line x1="12" y1="2" x2="12" y2="6"/>
+                        <line x1="12" y1="18" x2="12" y2="22"/>
+                        <line x1="2" y1="12" x2="6" y2="12"/>
+                        <line x1="18" y1="12" x2="22" y2="12"/>
+                    </svg>
+                </button>
+                <button class="tool-btn" data-tool="sam" title="SAM AI Auto-Annotate">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="label-selector">
+                <label>Label:</label>
+                <select id="labelSelect">
+                    {% for lc in label_classes %}
+                    <option value="{{ lc.id }}" style="color: {{ lc.color }}">{{ lc.name }}</option>
+                    {% empty %}
+                    <option value="">No labels - create one</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="action-buttons">
+                <button id="saveBtn" class="btn-save">Save Annotation</button>
+                <button id="clearBtn" class="btn-clear">Clear</button>
+                <button id="undoBtn" class="btn-undo">Undo</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="tool-main">
+        <div class="image-list-panel">
+            <h3>Images ({{ images|length }})</h3>
+            <div class="image-list">
+                {% for img in images %}
+                <div class="image-thumb" data-image-id="{{ img.id }}" data-url="{{ img.file.url }}">
+                    <img src="{{ img.file.url }}" alt="{{ img.name }}">
+                    <span class="thumb-name">{{ img.name|truncatechars:15 }}</span>
+                </div>
+                {% empty %}
+                <p class="no-images">No images in this project.</p>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="canvas-panel">
+            <div class="canvas-container">
+                <canvas id="annotationCanvas"></canvas>
+            </div>
+            <div class="canvas-status">
+                <span id="statusText">Select an image to annotate</span>
+            </div>
+        </div>
+        
+        <div class="annotations-panel">
+            <h3>Annotations</h3>
+            <div id="annotationsList" class="annotations-list">
+                <p class="no-anns">No annotations yet</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.annotation-tool-container {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 60px);
+    background: #1a1a2e;
+}
+
+.tool-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: #16213e;
+    border-bottom: 1px solid #0f3460;
+}
+
+.project-info h1 {
+    margin: 0;
+    color: white;
+    font-size: 1.3rem;
+}
+
+.tool-controls {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.tool-selector {
+    display: flex;
+    gap: 5px;
+    background: #0f3460;
+    padding: 5px;
+    border-radius: 8px;
+}
+
+.tool-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: transparent;
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.tool-btn:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.tool-btn.active {
+    background: #667eea;
+}
+
+.label-selector {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.label-selector label {
+    color: white;
+}
+
+#labelSelect {
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: #0f3460;
+    color: white;
+    border: 1px solid #667eea;
+    min-width: 150px;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-save, .btn-clear, .btn-undo {
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.btn-save {
+    background: #00d26a;
+    color: black;
+}
+
+.btn-clear {
+    background: #f5365c;
+    color: white;
+}
+
+.btn-undo {
+    background: #fb6340;
+    color: white;
+}
+
+.tool-main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+.image-list-panel {
+    width: 220px;
+    background: #16213e;
+    padding: 15px;
+    overflow-y: auto;
+}
+
+.image-list-panel h3 {
+    color: white;
+    margin: 0 0 15px 0;
+    font-size: 1rem;
+}
+
+.image-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.image-thumb {
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+}
+
+.image-thumb:hover {
+    border-color: rgba(255,255,255,0.3);
+}
+
+.image-thumb.active {
+    border-color: #667eea;
+}
+
+.image-thumb img {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+}
+
+.thumb-name {
+    display: block;
+    padding: 5px;
+    background: #0f3460;
+    color: white;
+    font-size: 0.75rem;
+    text-align: center;
+}
+
+.canvas-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #0a0a1a;
+}
+
+.canvas-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    overflow: auto;
+}
+
+#annotationCanvas {
+    max-width: 100%;
+    max-height: 100%;
+    background: #1a1a2e;
+    border-radius: 8px;
+}
+
+.canvas-status {
+    padding: 10px 20px;
+    background: #16213e;
+    color: white;
+    text-align: center;
+}
+
+.annotations-panel {
+    width: 280px;
+    background: #16213e;
+    padding: 15px;
+    overflow-y: auto;
+}
+
+.annotations-panel h3 {
+    color: white;
+    margin: 0 0 15px 0;
+}
+
+.annotations-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.annotation-item {
+    background: #0f3460;
+    padding: 10px;
+    border-radius: 6px;
+    color: white;
+}
+
+.annotation-item .type {
+    font-size: 0.75rem;
+    color: #667eea;
+    text-transform: uppercase;
+}
+
+.annotation-item .label {
+    font-weight: 500;
+}
+
+.no-images, .no-anns {
+    color: rgba(255,255,255,0.5);
+    text-align: center;
+    padding: 20px;
+}
+</style>
+
+<script>
+let currentTool = 'bbox';
+let currentImage = null;
+let currentImageId = null;
+let annotations = [];
+let currentAnnotation = null;
+const canvas = document.getElementById('annotationCanvas');
+const ctx = canvas.getContext('2d');
+
+// Tool selection
+document.querySelectorAll('.tool-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentTool = btn.dataset.tool;
+    });
+});
+
+// Image selection
+document.querySelectorAll('.image-thumb').forEach(thumb => {
+    thumb.addEventListener('click', async () => {
+        document.querySelectorAll('.image-thumb').forEach(t => t.classList.remove('active'));
+        thumb.classList.add('active');
+        
+        currentImageId = thumb.dataset.imageId;
+        const url = thumb.dataset.url;
+        
+        // Load image
+        const img = new Image();
+        img.onload = () => {
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+            currentImage = img;
+            document.getElementById('statusText').textContent = `Annotating: ${url.split('/').pop()}`;
+        };
+        img.src = url;
+        
+        // Load annotations
+        const annResponse = await fetch(`/nexify/api/annotations/${currentImageId}/`);
+        const annData = await annResponse.json();
+        annotations = annData.annotations || [];
+        renderAnnotationsList();
+    });
+});
+
+function renderAnnotationsList() {
+    const list = document.getElementById('annotationsList');
+    if (annotations.length === 0) {
+        list.innerHTML = '<p class="no-anns">No annotations yet</p>';
+        return;
+    }
+    
+    list.innerHTML = annotations.map(a => `
+        <div class="annotation-item" data-id="${a.id}">
+            <div class="type">${a.type}</div>
+            <div class="label">${a.label || 'Unlabeled'}</div>
+        </div>
+    `).join('');
+}
+
+// Canvas drawing
+let isDrawing = false;
+let startX, startY;
+
+canvas.addEventListener('mousedown', (e) => {
+    if (!currentImage) return;
+    const rect = canvas.getBoundingClientRect();
+    startX = e.clientX - rect.left;
+    startY = e.clientY - rect.top;
+    isDrawing = true;
+});
+
+canvas.addEventListener('mousemove', (e) => {
+    if (!isDrawing || !currentImage) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    // Redraw image and previous annotations
+    ctx.drawImage(currentImage, 0, 0);
+    drawAnnotation(currentAnnotation);
+    
+    // Draw current annotation
+    ctx.strokeStyle = '#667eea';
+    ctx.lineWidth = 3;
+    
+    if (currentTool === 'bbox') {
+        ctx.strokeRect(startX, startY, x - startX, y - startY);
+    }
+});
+
+canvas.addEventListener('mouseup', (e) => {
+    if (!isDrawing || !currentImage) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    if (currentTool === 'bbox') {
+        currentAnnotation = {
+            type: 'bbox',
+            data: [
+                {x: startX, y: startY},
+                {x: x, y: y}
+            ]
+        };
+    }
+    
+    isDrawing = false;
+});
+
+function drawAnnotation(ann) {
+    if (!ann || !ann.data) return;
+    
+    ctx.strokeStyle = '#667eea';
+    ctx.lineWidth = 3;
+    
+    if (ann.type === 'bbox' && ann.data.length >= 2) {
+        const [p1, p2] = ann.data;
+        ctx.strokeRect(p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
+    }
+}
+
+// Save annotation
+document.getElementById('saveBtn').addEventListener('click', async () => {
+    if (!currentImageId || !currentAnnotation) {
+        alert('Select an image and draw an annotation first');
+        return;
+    }
+    
+    const labelSelect = document.getElementById('labelSelect');
+    
+    try {
+        const response = await fetch('/nexify/api/annotate/', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                image_id: currentImageId,
+                type: currentAnnotation.type,
+                data: currentAnnotation.data,
+                label_class_id: labelSelect.value,
+                confidence: 1.0
+            })
+        });
+        
+        const data = await response.json();
+        alert('Annotation saved!');
+        currentAnnotation = null;
+        
+        // Reload annotations
+        const annResponse = await fetch(`/nexify/api/annotations/${currentImageId}/`);
+        const annData = await annResponse.json();
+        annotations = annData.annotations || [];
+        renderAnnotationsList();
+    } catch (err) {
+        alert('Error saving: ' + err.message);
+    }
+});
+
+// Clear
+document.getElementById('clearBtn').addEventListener('click', () => {
+    if (currentImage) {
+        ctx.drawImage(currentImage, 0, 0);
+    }
+    currentAnnotation = null;
+});
+</script>
+{% endblock %}

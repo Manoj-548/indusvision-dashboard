@@ -11,27 +11,38 @@ from django.shortcuts import render, redirect
 
 
 def login_view(request):
-    from django.contrib.auth.forms import UserCreationForm
+    from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+    from django.contrib.auth import login as auth_login
+    
+    if request.user.is_authenticated:
+        return redirect('dashboard:home')
+    
     register = request.POST.get('register') == '1' if request.method == 'POST' else False
-    if register:
-        form = UserCreationForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            login(request, user)
-            return redirect('dashboard')
+    
+    if request.method == 'POST':
+        if register:
+            form = UserCreationForm(request.POST)
+            if form.is_valid():
+                user = form.save()
+                auth_login(request, user)
+                next_url = request.POST.get('next', '/dashboard/')
+                return redirect(next_url)
+        else:
+            form = AuthenticationForm(request, data=request.POST)
+            if form.is_valid():
+                user = form.get_user()
+                auth_login(request, user)
+                next_url = request.GET.get('next', '/dashboard/')
+                return redirect(next_url)
     else:
-        form = AuthenticationForm(request, data=request.POST if request.method == 'POST' else None)
-        if form and form.is_valid():
-            user = form.get_user()
-            login(request, user)
-            return redirect('dashboard')
+        form = AuthenticationForm()
+    
     return render(request, 'login.html', {'form': form, 'register': register})
 
 
 def dashboard_view(request):
-    if not request.user.is_authenticated:
-        return redirect('login')
-    return render(request, 'dashboard.html')
+    return redirect("dashboard:home")
+
 
 @csrf_exempt
 def api_sensor(request):

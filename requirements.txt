@@ -161,4 +161,6 @@ yarl==1.23.0
 zipp==3.23.1
 zstandard==0.25.0
 psycopg[binary]==3.2.1
+albumentations>=2.0.8
+pycocotools>=2.0.11
 

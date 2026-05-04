@@ -1,7 +1,55 @@
-<h1>IndusVision Dashboard</h1>
+{% extends "base.html" %}
+{% block title %}IndusVision Dashboard - Nexify Annotation{% endblock %}
 
-<p>Projects: {{ stats.projects }}</p>
-<p>Images: {{ stats.images }}</p>
-<p>Annotations: {{ stats.annotations }}</p>
+{% block sidebar %}{% endblock %}
 
-<a href="/annotation/">Go to Annotation Tool</a>
+{% block content %}
+<div class="container-fluid">
+  <h1>IndusVision Dashboard</h1>
+  <div class="row mb-4">
+    <div class="col-md-2">
+      <div class="card bg-primary text-white">
+        <div class="card-body">
+          <h5>Workspaces</h5>
+          <p class="card-text fs-1">{{ stats.workspaces|default:0 }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="card bg-success text-white">
+        <div class="card-body">
+          <h5>Projects</h5>
+          <p class="card-text fs-1">{{ stats.projects|default:0 }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="card bg-info text-white">
+        <div class="card-body">
+          <h5>Users</h5>
+          <p class="card-text fs-1">{{ stats.users|default:0 }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="card bg-warning text-white">
+        <div class="card-body">
+          <h5>Datasets</h5>
+          <p class="card-text fs-1">{{ stats.datasets|default:0 }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      {% if user.is_authenticated %}
+      <div class="card h-100 border-primary">
+        <div class="card-body d-flex flex-column justify-content-center align-items-center">
+          <h5>Enter Nexify Tool</h5>
+          <a href="/nexify/" class="btn btn-primary btn-lg mt-2">🚀 Launch Nexify</a> {# url 'nexify:nexify_login' - route missing #}
+          <small class="text-muted mt-2">Annotation & Dataset Management</small>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

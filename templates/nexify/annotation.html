@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+<h2><i class="fas fa-draw-polygon"></i> Annotation Studio</h2>
+        <div>
+            <span class="badge bg-primary me-2">Project: Default</span>
+            <span class="badge bg-success">Admin Mode</span>
+        </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="card mb-3">
+        <div class="card-body py-2">
+            <div class="btn-group me-2" role="group">
+                <button class="btn btn-outline-secondary" title="Select"><i class="fas fa-mouse-pointer"></i></button>
+                <button class="btn btn-outline-secondary" title="Bounding Box"><i class="fas fa-vector-square"></i></button>
+                <button class="btn btn-outline-secondary" title="Polygon"><i class="fas fa-draw-polygon"></i></button>
+                <button class="btn btn-outline-secondary" title="Brush"><i class="fas fa-paint-brush"></i></button>
+                <button class="btn btn-outline-secondary" title="Eraser"><i class="fas fa-eraser"></i></button>
+            </div>
+            <div class="btn-group me-2" role="group">
+                <button class="btn btn-outline-primary" title="Undo"><i class="fas fa-undo"></i></button>
+                <button class="btn btn-outline-primary" title="Redo"><i class="fas fa-redo"></i></button>
+                <button class="btn btn-outline-danger" title="Delete"><i class="fas fa-trash"></i></button>
+            </div>
+            <div class="btn-group me-2" role="group">
+                <button class="btn btn-outline-success" title="Save"><i class="fas fa-save"></i></button>
+                <button class="btn btn-outline-info" title="Export"><i class="fas fa-download"></i></button>
+            </div>
+            <div class="btn-group" role="group">
+                <button class="btn btn-outline-warning" title="Zoom In"><i class="fas fa-search-plus"></i></button>
+                <button class="btn btn-outline-warning" title="Zoom Out"><i class="fas fa-search-minus"></i></button>
+                <button class="btn btn-outline-warning" title="Fit"><i class="fas fa-expand"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="row">
+        <!-- Image List Sidebar -->
+        <div class="col-md-2">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Images</h6>
+                </div>
+                <div class="card-body p-0" style="max-height: 500px; overflow-y: auto;">
+                    <div class="list-group list-group-flush" id="imageList">
+                        <a href="#" class="list-group-item list-group-item-action active">
+                            <small>image_001.jpg</small>
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action">
+                            <small>image_002.jpg</small>
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action">
+                            <small>image_003.jpg</small>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tags -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0">Tags</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <span class="badge bg-primary">vehicle</span>
+                        <span class="badge bg-success">road</span>
+                        <span class="badge bg-warning text-dark">building</span>
+                    </div>
+                    <input type="text" class="form-control form-control-sm" placeholder="Add tag...">
+                </div>
+            </div>
+        </div>
+
+        <!-- Canvas Area -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body text-center p-0" style="background: #1a1a1a; min-height: 500px;">
+                    <div class="d-flex align-items-center justify-content-center h-100 text-white">
+                        <div class="text-center">
+                            <i class="fas fa-image fa-3x mb-3 text-muted"></i>
+                            <p>Select an image to annotate</p>
+                            <small class="text-muted">Drop images here or click to browse</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Annotations Sidebar -->
+        <div class="col-md-2">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Annotations</h6>
+                </div>
+                <div class="card-body p-0" style="max-height: 300px; overflow-y: auto;">
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span><i class="fas fa-vector-square text-danger"></i> car</span>
+                                <small class="text-muted">95%</small>
+                            </div>
+                        </div>
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span><i class="fas fa-vector-square text-warning"></i> person</span>
+                                <small class="text-muted">87%</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Label Classes -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0">Label Classes</h6>
+                </div>
+                <div class="card-body p-0" style="max-height: 200px; overflow-y: auto;">
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span class="text-danger">● car</span>
+                            <small>125</small>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span class="text-warning">● person</span>
+                            <small>89</small>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span class="text-primary">● bicycle</span>
+                            <small>45</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

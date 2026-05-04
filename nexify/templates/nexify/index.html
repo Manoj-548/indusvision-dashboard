@@ -1,0 +1,568 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Nexify - AI Annotation Dashboard{% endblock %}
+
+{% block sidebar %}{% endblock %}
+
+{% block content %}
+<div id="nexify-app" style="background:#0f172a;min-height:calc(100vh - 56px);color:#e2e8f0;font-family:sans-serif;">
+
+  <!-- Top Bar -->
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:0.75rem 1.5rem;border-bottom:1px solid #1e293b;background:#1e293b;">
+    <div style="display:flex;align-items:center;gap:1rem;">
+      <h2 style="margin:0;color:#38bdf8;font-size:1.25rem;">Nexify AI Annotation Engine</h2>
+      <span id="cursor-coords" style="color:#94a3b8;font-size:0.8rem;font-family:monospace;">X: 0, Y: 0</span>
+    </div>
+    <div style="display:flex;gap:0.5rem;align-items:center;">
+      {% if is_nexify_admin %}
+      <a href="/nexify/dataset/" class="btn btn-sm btn-outline-warning">Dataset</a>
+      {% endif %}
+      <span id="status-badge" class="badge bg-success">Ready</span>
+    </div>
+
+  <div style="display:flex;gap:0.75rem;padding:0.75rem 1rem;height:calc(100vh - 110px);">
+
+    <!-- LEFT SIDEBAR -->
+    <div style="width:240px;flex-shrink:0;display:flex;flex-direction:column;gap:0.5rem;overflow-y:auto;">
+      
+      <!-- Projects -->
+      <div style="background:#1e293b;border-radius:6px;padding:0.75rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+          <h6 style="color:#38bdf8;margin:0;font-size:0.85rem;">Projects</h6>
+          <button class="btn btn-xs btn-primary" style="font-size:0.7rem;padding:0.15rem 0.4rem;" onclick="createProject()">+ New</button>
+        </div>
+        <div id="project-list" style="max-height:140px;overflow-y:auto;font-size:0.8rem;"></div>
+
+      <!-- Folder Upload (Admin) -->
+      {% if is_nexify_admin %}
+      <div style="background:#1e293b;border-radius:6px;padding:0.75rem;">
+        <h6 style="color:#38bdf8;margin:0 0 0.5rem 0;font-size:0.85rem;">Upload Folder</h6>
+        <input type="file" id="folderInput" webkitdirectory directory multiple class="form-control form-control-sm mb-2" style="font-size:0.75rem;" onchange="uploadFolder(this.files)">
+      </div>
+      {% endif %}
+
+      <!-- Images -->
+      <div style="background:#1e293b;border-radius:6px;padding:0.75rem;flex:1;min-height:0;">
+        <h6 style="color:#38bdf8;margin:0 0 0.5rem 0;font-size:0.85rem;">Images</h6>
+        <input type="file" id="fileInput" class="form-control form-control-sm mb-2" style="font-size:0.75rem;" onchange="uploadImage(this.files[0])">
+        <div id="image-list" style="overflow-y:auto;font-size:0.8rem;max-height:200px;"></div>
+
+      <!-- Label Classes -->
+      <div style="background:#1e293b;border-radius:6px;padding:0.75rem;">
+        <h6 style="color:#38bdf8;margin:0 0 0.5rem 0;font-size:0.85rem;">Label Classes</h6>
+        <div id="label-class-list" style="font-size:0.8rem;max-height:100px;overflow-y:auto;"></div>
+        <div class="input-group input-group-sm mt-2">
+          <input type="text" id="new-class-name" class="form-control" placeholder="Class name" style="font-size:0.75rem;">
+          <button class="btn btn-outline-info" style="font-size:0.75rem;" onclick="addLabelClass()">Add</button>
+        </div>
+
+      <!-- Task Assignment (Admin) -->
+      {% if is_nexify_admin %}
+      <div style="background:#1e293b;border-radius:6px;padding:0.75rem;">
+        <h6 style="color:#38bdf8;margin:0 0 0.5rem 0;font-size:0.85rem;">Assign Task</h6>
+        <input type="email" id="assign-email" class="form-control form-control-sm mb-2" placeholder="Email" style="font-size:0.75rem;">
+        <select id="assign-role" class="form-select form-select-sm mb-2" style="font-size:0.75rem;">
+          <option value="annotator">Annotator</option>
+          <option value="reviewer">Reviewer</option>
+        </select>
+        <button class="btn btn-sm btn-outline-success w-100" style="font-size:0.75rem;" onclick="assignTask()">Assign</button>
+        <div id="assignment-list" style="font-size:0.75rem;margin-top:0.5rem;max-height:80px;overflow-y:auto;"></div>
+      {% endif %}
+    </div>
+
+    <!-- MAIN CANVAS AREA -->
+    <div style="flex:1;background:#0f172a;border-radius:6px;padding:0.5rem;position:relative;display:flex;flex-direction:column;min-width:0;">
+      
+      <!-- Toolbar -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;flex-shrink:0;">
+        <div class="btn-group btn-group-sm">
+          <button class="btn btn-outline-info active" id="tool-bbox" onclick="setTool('bbox')">BBox</button>
+          <button class="btn btn-outline-info" id="tool-polygon" onclick="setTool('polygon')">Polygon</button>
+          <button class="btn btn-outline-info" id="tool-keypoint" onclick="setTool('keypoint')">Keypoint</button>
+        </div>
+        <div style="display:flex;gap:0.5rem;">
+          <button class="btn btn-sm btn-success" onclick="saveAnnotation()">Save</button>
+          <button class="btn btn-sm btn-danger" onclick="clearAnnotations()">Clear</button>
+          <button class="btn btn-sm btn-outline-light" onclick="exportDataset('yolo')">YOLO</button>
+          <button class="btn btn-sm btn-outline-light" onclick="exportDataset('coco')">COCO</button>
+          <button class="btn btn-sm btn-outline-light" onclick="exportDataset('csv')">CSV</button>
+        </div>
+
+      <!-- Canvas -->
+      <div id="canvas-wrapper" style="flex:1;position:relative;overflow:auto;background:#000;border-radius:4px;display:flex;align-items:center;justify-content:center;min-height:0;">
+        <p id="canvas-placeholder" class="text-muted" style="margin:0;">Select an image to start annotating</p>
+        <div id="canvas-inner" style="position:relative;display:none;">
+          <img id="canvas-image" style="display:block;max-width:none;max-height:none;" draggable="false" />
+          <svg id="annotation-layer" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;"></svg>
+          <div id="interaction-layer" style="position:absolute;top:0;left:0;width:100%;height:100%;cursor:crosshair;"></div>
+      </div>
+
+      <!-- Zoom & Info -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.5rem;flex-shrink:0;">
+        <div style="font-size:0.75rem;color:#94a3b8;">
+          <span id="img-dims">No image</span>
+          <span id="zoom-level" style="margin-left:1rem;">Zoom: 100%</span>
+        </div>
+        <div class="btn-group btn-group-sm">
+          <button class="btn btn-outline-secondary" onclick="zoomImage(-0.2)">-</button>
+          <button class="btn btn-outline-secondary" onclick="zoomImage(0.2)">+</button>
+          <button class="btn btn-outline-secondary" onclick="resetZoom()">Reset</button>
+        </div>
+    </div>
+
+    <!-- RIGHT SIDEBAR -->
+    <div style="width:220px;flex-shrink:0;display:flex;flex-direction:column;gap:0.5rem;">
+      
+      <!-- Annotations -->
+      <div style="background:#1e293b;border-radius:6px;padding:0.75rem;flex:1;min-height:0;">
+        <h6 style="color:#38bdf8;margin:0 0 0.5rem 0;font-size:0.85rem;">Annotations</h6>
+        <div id="annotation-list" style="overflow-y:auto;font-size:0.8rem;max-height:300px;"></div>
+
+      <!-- Actions -->
+      <div style="background:#1e293b;border-radius:6px;padding:0.75rem;">
+        <h6 style="color:#38bdf8;margin:0 0 0.5rem 0;font-size:0.85rem;">Actions</h6>
+        <button class="btn btn-sm btn-outline-warning w-100 mb-2" style="font-size:0.75rem;" onclick="bulkAugment()">Bulk Augment</button>
+        <button class="btn btn-sm btn-outline-success w-100" style="font-size:0.75rem;" onclick="exportDataset('zip')">Download ZIP</button>
+      </div>
+
+  </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentProject = null;
+let currentImage = null;
+let currentTool = 'bbox';
+let annotations = [];
+let polygonPoints = [];
+let zoomScale = 1.0;
+let imgNaturalWidth = 0;
+let imgNaturalHeight = 0;
+
+// Initialize
+loadProjects();
+
+async function apiGet(url) {
+  const r = await fetch(url, { headers: { 'X-CSRFToken': getCookie('csrftoken') } });
+  return r.json();
+}
+
+async function apiPost(url, body, isJson = true) {
+  const opts = { method: 'POST', headers: { 'X-CSRFToken': getCookie('csrftoken') } };
+  if (isJson) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
+  else { opts.body = body; }
+  const r = await fetch(url, opts);
+  return r.json();
+}
+
+function getCookie(name) {
+  let v = null;
+  if (document.cookie) {
+    document.cookie.split(';').forEach(c => {
+      c = c.trim();
+      if (c.substring(0, name.length + 1) === (name + '=')) {
+        v = decodeURIComponent(c.substring(name.length + 1));
+      }
+    });
+  }
+  return v;
+}
+
+// ========== PROJECTS ==========
+async function loadProjects() {
+  const data = await apiGet('/nexify/api/projects/');
+  const el = document.getElementById('project-list');
+  el.innerHTML = '';
+  (data.projects || []).forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'p-2 mb-1 rounded';
+    div.style.cssText = 'background:#334155;cursor:pointer;';
+    div.textContent = p.name;
+    div.onclick = () => selectProject(p.id);
+    el.appendChild(div);
+  });
+}
+
+async function createProject() {
+  const name = prompt('Project name:');
+  if (!name) return;
+  const classes = (prompt('Classes (comma-separated):') || '').split(',').map(s => s.trim()).filter(Boolean);
+  await apiPost('/nexify/api/project/', { name, workspace: 'default', classes });
+  loadProjects();
+}
+
+async function selectProject(id) {
+  currentProject = id;
+  loadImages(id);
+  loadLabelClasses(id);
+  loadAssignments(id);
+}
+
+// ========== IMAGES ==========
+async function loadImages(projectId) {
+  const url = projectId ? `/nexify/api/images/${projectId}/` : '/nexify/api/images/';
+  const data = await apiGet(url);
+  const el = document.getElementById('image-list');
+  el.innerHTML = '';
+  (data.images || []).forEach(img => {
+    const div = document.createElement('div');
+    div.className = 'p-2 mb-1 rounded';
+    div.style.cssText = 'background:#334155;cursor:pointer;font-size:0.8rem;';
+    div.textContent = img.name;
+    div.onclick = () => selectImage(img);
+    el.appendChild(div);
+  });
+}
+
+async function uploadImage(file) {
+  if (!file) return;
+  const form = new FormData();
+  form.append('file', file);
+  if (currentProject) form.append('project_id', currentProject);
+  await apiPost('/nexify/api/upload/', form, false);
+  loadImages(currentProject);
+  document.getElementById('fileInput').value = '';
+}
+
+async function uploadFolder(files) {
+  if (!files || !files.length) return;
+  if (!currentProject) { alert('Select a project first'); document.getElementById('folderInput').value = ''; return; }
+  const form = new FormData();
+  for (let f of files) form.append('files', f);
+  form.append('project_id', currentProject);
+  const data = await apiPost('/nexify/api/upload-folder/', form, false);
+  alert(`Uploaded ${data.count || 0} images`);
+  loadImages(currentProject);
+  document.getElementById('folderInput').value = '';
+}
+
+// ========== LABEL CLASSES ==========
+async function loadLabelClasses(projectId) {
+  if (!projectId) return;
+  const data = await apiGet(`/nexify/api/label-classes/${projectId}/`);
+  const el = document.getElementById('label-class-list');
+  el.innerHTML = '';
+  (data.classes || []).forEach(c => {
+    const div = document.createElement('div');
+    div.className = 'p-1 mb-1 rounded';
+    div.style.cssText = `background:${c.color || '#334155'};font-size:0.8rem;`;
+    div.textContent = c.name;
+    el.appendChild(div);
+  });
+}
+
+async function addLabelClass() {
+  if (!currentProject) { alert('Select a project first'); return; }
+  const name = document.getElementById('new-class-name').value;
+  if (!name) return;
+  await apiPost('/nexify/api/label-class/', { name, project_id: currentProject, color: '#00FF00' });
+  document.getElementById('new-class-name').value = '';
+  loadLabelClasses(currentProject);
+}
+
+// ========== TASK ASSIGNMENT ==========
+async function assignTask() {
+  if (!currentProject) { alert('Select a project first'); return; }
+  const email = document.getElementById('assign-email').value;
+  const role = document.getElementById('assign-role').value;
+  if (!email) return;
+  await apiPost('/nexify/api/assign/', { email, project_id: currentProject, role });
+  document.getElementById('assign-email').value = '';
+  loadAssignments(currentProject);
+}
+
+async function loadAssignments(projectId) {
+  if (!projectId) return;
+  const data = await apiGet(`/nexify/api/assignments/${projectId}/`);
+  const el = document.getElementById('assignment-list');
+  if (!el) return;
+  el.innerHTML = '';
+  (data.assignments || []).forEach(a => {
+    const div = document.createElement('div');
+    div.style.cssText = 'font-size:0.7rem;color:#94a3b8;margin-bottom:0.25rem;';
+    div.textContent = `${a.user} (${a.role})`;
+    el.appendChild(div);
+  });
+}
+
+// ========== IMAGE DISPLAY & ZOOM ==========
+function selectImage(img) {
+  currentImage = img;
+  const imgEl = document.getElementById('canvas-image');
+  const inner = document.getElementById('canvas-inner');
+  const placeholder = document.getElementById('canvas-placeholder');
+  const wrapper = document.getElementById('canvas-wrapper');
+
+  imgEl.src = img.url;
+  imgEl.onload = () => {
+    imgNaturalWidth = imgEl.naturalWidth;
+    imgNaturalHeight = imgEl.naturalHeight;
+    zoomScale = 1.0;
+    applyZoom();
+    document.getElementById('img-dims').textContent = `${imgNaturalWidth} x ${imgNaturalHeight}`;
+  };
+
+  inner.style.display = 'block';
+  placeholder.style.display = 'none';
+  zoomScale = 1.0;
+
+  loadAnnotations(img.id);
+}
+
+function zoomImage(delta) {
+  zoomScale = Math.max(0.2, Math.min(5.0, zoomScale + delta));
+  applyZoom();
+}
+
+function resetZoom() {
+  zoomScale = 1.0;
+  applyZoom();
+}
+
+function applyZoom() {
+  const imgEl = document.getElementById('canvas-image');
+  if (!imgEl || !imgNaturalWidth) return;
+  imgEl.style.width = (imgNaturalWidth * zoomScale) + 'px';
+  imgEl.style.height = (imgNaturalHeight * zoomScale) + 'px';
+  document.getElementById('zoom-level').textContent = 'Zoom: ' + Math.round(zoomScale * 100) + '%';
+}
+
+// ========== CURSOR COORDINATES ==========
+const interactionLayer = document.getElementById('interaction-layer');
+const coordsDisplay = document.getElementById('cursor-coords');
+
+interactionLayer.addEventListener('mousemove', e => {
+  if (!currentImage || !imgNaturalWidth) return;
+  const rect = interactionLayer.getBoundingClientRect();
+  const x = (e.clientX - rect.left) / zoomScale;
+  const y = (e.clientY - rect.top) / zoomScale;
+  coordsDisplay.textContent = `X: ${Math.round(x)}, Y: ${Math.round(y)}`;
+});
+
+interactionLayer.addEventListener('mouseleave', () => {
+  coordsDisplay.textContent = 'X: 0, Y: 0';
+});
+
+// ========== ANNOTATION TOOLS ==========
+function setTool(tool) {
+  currentTool = tool;
+  document.querySelectorAll('[id^="tool-"]').forEach(b => b.classList.remove('active'));
+  document.getElementById('tool-' + tool).classList.add('active');
+  polygonPoints = [];
+}
+
+function getCanvasPoint(e) {
+  const rect = interactionLayer.getBoundingClientRect();
+  return {
+    x: (e.clientX - rect.left) / zoomScale,
+    y: (e.clientY - rect.top) / zoomScale
+  };
+}
+
+// BBox drawing
+let isDrawing = false;
+let drawStart = null;
+
+interactionLayer.addEventListener('mousedown', e => {
+  if (!currentImage) return;
+  if (currentTool === 'bbox') {
+    isDrawing = true;
+    drawStart = getCanvasPoint(e);
+  } else if (currentTool === 'keypoint') {
+    const pt = getCanvasPoint(e);
+    annotations.push({ type: 'keypoint', data: [pt], label_class: null, confidence: 1.0 });
+    drawAnnotations();
+    renderAnnotationList();
+  }
+});
+
+interactionLayer.addEventListener('mousemove', e => {
+  if (!isDrawing || currentTool !== 'bbox') return;
+  // Could show preview rect here
+});
+
+interactionLayer.addEventListener('mouseup', e => {
+  if (!isDrawing || currentTool !== 'bbox') return;
+  isDrawing = false;
+  const end = getCanvasPoint(e);
+  annotations.push({
+    type: 'bbox',
+    data: [drawStart, end],
+    label_class: null,
+    confidence: 1.0
+  });
+  drawAnnotations();
+  renderAnnotationList();
+  drawStart = null;
+});
+
+// Polygon: double-click to finish
+interactionLayer.addEventListener('click', e => {
+  if (!currentImage || currentTool !== 'polygon') return;
+  const pt = getCanvasPoint(e);
+  polygonPoints.push(pt);
+  drawAnnotations();
+  if (polygonPoints.length >= 3) {
+    // Allow finishing by clicking near first point or use a finish button
+  }
+});
+
+// Finish polygon with right-click
+interactionLayer.addEventListener('contextmenu', e => {
+  e.preventDefault();
+  if (currentTool === 'polygon' && polygonPoints.length >= 3) {
+    annotations.push({
+      type: 'polygon',
+      data: [...polygonPoints],
+      label_class: null,
+      confidence: 1.0
+    });
+    polygonPoints = [];
+    drawAnnotations();
+    renderAnnotationList();
+  }
+});
+
+// ========== ANNOTATION RENDERING ==========
+function drawAnnotations() {
+  const svg = document.getElementById('annotation-layer');
+  svg.innerHTML = '';
+  
+  // Draw saved annotations
+  annotations.forEach((a, idx) => {
+    if (a.type === 'bbox' && a.data && a.data.length >= 2) {
+      const x1 = a.data[0].x * zoomScale, y1 = a.data[0].y * zoomScale;
+      const x2 = a.data[1].x * zoomScale, y2 = a.data[1].y * zoomScale;
+      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.setAttribute('x', Math.min(x1, x2));
+      rect.setAttribute('y', Math.min(y1, y2));
+      rect.setAttribute('width', Math.abs(x2 - x1));
+      rect.setAttribute('height', Math.abs(y2 - y1));
+      rect.setAttribute('fill', 'none');
+      rect.setAttribute('stroke', '#38bdf8');
+      rect.setAttribute('stroke-width', '2');
+      svg.appendChild(rect);
+      // Label
+      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      text.setAttribute('x', Math.min(x1, x2));
+      text.setAttribute('y', Math.min(y1, y2) - 4);
+      text.setAttribute('fill', '#38bdf8');
+      text.setAttribute('font-size', '12');
+      text.textContent = a.label_class || `bbox-${idx + 1}`;
+      svg.appendChild(text);
+    } else if (a.type === 'polygon' && a.data && a.data.length >= 3) {
+      const pts = a.data.map(p => `${p.x * zoomScale},${p.y * zoomScale}`).join(' ');
+      const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+      poly.setAttribute('points', pts);
+      poly.setAttribute('fill', 'rgba(56,189,248,0.2)');
+      poly.setAttribute('stroke', '#38bdf8');
+      poly.setAttribute('stroke-width', '2');
+      svg.appendChild(poly);
+    } else if (a.type === 'keypoint' && a.data && a.data.length >= 1) {
+      const pt = a.data[0];
+      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      circle.setAttribute('cx', pt.x * zoomScale);
+      circle.setAttribute('cy', pt.y * zoomScale);
+      circle.setAttribute('r', '4');
+      circle.setAttribute('fill', '#f472b6');
+      circle.setAttribute('stroke', '#fff');
+      circle.setAttribute('stroke-width', '1');
+      svg.appendChild(circle);
+    }
+  });
+
+  // Draw current polygon in progress
+  if (currentTool === 'polygon' && polygonPoints.length > 0) {
+    polygonPoints.forEach((pt, i) => {
+      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      circle.setAttribute('cx', pt.x * zoomScale);
+      circle.setAttribute('cy', pt.y * zoomScale);
+      circle.setAttribute('r', '3');
+      circle.setAttribute('fill', '#fbbf24');
+      svg.appendChild(circle);
+    });
+    if (polygonPoints.length >= 2) {
+      const pts = polygonPoints.map(p => `${p.x * zoomScale},${p.y * zoomScale}`).join(' ');
+      const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+      poly.setAttribute('points', pts);
+      poly.setAttribute('fill', 'none');
+      poly.setAttribute('stroke', '#fbbf24');
+      poly.setAttribute('stroke-width', '1');
+      poly.setAttribute('stroke-dasharray', '4');
+      svg.appendChild(poly);
+    }
+  }
+}
+
+function renderAnnotationList() {
+  const el = document.getElementById('annotation-list');
+  el.innerHTML = '';
+  annotations.forEach((a, i) => {
+    const div = document.createElement('div');
+    div.className = 'p-1 mb-1 rounded';
+    div.style.cssText = 'background:#334155;display:flex;justify-content:space-between;align-items:center;';
+    const label = a.label_class || `${a.type}-${i + 1}`;
+    div.innerHTML = `<span>${i + 1}. ${a.type} - ${label}</span>
+      <button class="btn btn-xs btn-danger" style="font-size:0.6rem;padding:0 0.3rem;" onclick="deleteAnnotation(${i})">x</button>`;
+    el.appendChild(div);
+  });
+}
+
+function deleteAnnotation(idx) {
+  annotations.splice(idx, 1);
+  drawAnnotations();
+  renderAnnotationList();
+}
+
+async function loadAnnotations(imageId) {
+  const data = await apiGet(`/nexify/api/annotations/${imageId}/`);
+  annotations = data.annotations || [];
+  drawAnnotations();
+  renderAnnotationList();
+}
+
+async function saveAnnotation() {
+  if (!currentImage || annotations.length === 0) return;
+  // Save all unsaved annotations
+  for (const ann of annotations) {
+    if (!ann.id) {
+      await apiPost('/nexify/api/annotate/', {
+        image_id: currentImage.id,
+        type: ann.type,
+        data: ann.data,
+        label_class_id: ann.label_class_id || null,
+        confidence: ann.confidence || 1.0
+      });
+    }
+  }
+  alert('Annotations saved');
+  loadAnnotations(currentImage.id);
+}
+
+function clearAnnotations() {
+  if (!confirm('Clear all annotations?')) return;
+  annotations = [];
+  polygonPoints = [];
+  drawAnnotations();
+  renderAnnotationList();
+}
+
+// ========== EXPORT & AUGMENT ==========
+function exportDataset(format) {
+  if (!currentProject) { alert('Select a project first'); return; }
+  window.open(`/nexify/api/export/${currentProject}/?format=${format}`);
+}
+
+async function augmentCurrent() {
+  if (!currentImage) { alert('Select an image first'); return; }
+  const data = await apiPost(`/nexify/api/augment/${currentImage.id}/`, {});
+  alert(data.status === 'done' ? 'Augmented: ' + data.url : 'Error: ' + data.error);
+}
+
+async function bulkAugment() {
+  if (!currentProject) { alert('Select a project first'); return; }
+  const data = await apiPost(`/nexify/api/bulk/${currentProject}/`, {});
+  alert(`Bulk augment done: ${data.augmented_count || 0} images`);
+}
+</script>
+{% endblock %}

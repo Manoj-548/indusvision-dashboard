@@ -29,10 +29,32 @@ else:
     ).split(",")
 
 # =========================================================
+# SECURITY IMPROVEMENTS
+# =========================================================
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = "DENY"
+SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+USE_X_FORWARDED_HOST = True
+
+# HTTPS/SSL SETTINGS
+# For production, set DEBUG=False and use proper SSL certificate
+SECURE_SSL_REDIRECT = os.getenv("SECURE_SSL_REDIRECT", "False").lower() == "true"
+SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", "False").lower() == "true"
+CSRF_COOKIE_SECURE = os.getenv("CSRF_COOKIE_SECURE", "False").lower() == "true"
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# SSL Certificate paths (for production HTTPS)
+SSL_CERT_PATH = os.getenv("SSL_CERT_PATH", BASE_DIR / "dashboard.crt")
+SSL_KEY_PATH = os.getenv("SSL_KEY_PATH", BASE_DIR / "dashboard.key")
+
+# =========================================================
 # APPLICATIONS
 # =========================================================
 INSTALLED_APPS = [
-    "django.contrib.admin",
+"django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -49,7 +71,11 @@ INSTALLED_APPS = [
 
     "dashboard",
     "api",
-    "tasks",
+"annotation_app",
+    "rag_engine",
+    "ai_core",
+    "workspace_manager",
+    "yolo_integration",
 ]
 
 # =========================================================
@@ -64,6 +90,7 @@ SITE_ID = 1
 
 LOGIN_REDIRECT_URL = "/dashboard/"
 LOGOUT_REDIRECT_URL = "/login/"
+LOGIN_URL = "/login/"
 
 ACCOUNT_EMAIL_VERIFICATION = "none"
 ACCOUNT_AUTHENTICATION_METHOD = "username_email"
@@ -83,7 +110,7 @@ MIDDLEWARE = [
     "allauth.account.middleware.AccountMiddleware",
 ]
 
-ROOT_URLCONF = "indusvision.urls"
+ROOT_URLCONF = "project_core.urls"
 
 # =========================================================
 # TEMPLATES
@@ -104,7 +131,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "indusvision.wsgi.application"
+WSGI_APPLICATION = "project_core.wsgi.application"
 
 # =========================================================
 # DATABASE CONFIG
@@ -115,7 +142,7 @@ if USE_POSTGRES:
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.getenv("POSTGRES_DB", "indusvision"),
+"NAME": os.getenv("POSTGRES_DB", "project_db"),
             "USER": os.getenv("POSTGRES_USER", "postgres"),
             "PASSWORD": os.getenv("POSTGRES_PASSWORD", "postgres"),
             "HOST": os.getenv("POSTGRES_HOST", "127.0.0.1"),
@@ -154,6 +181,12 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 
 # =========================================================
+# MEDIA FILES (Nexify uploads / augmented images)
+# =========================================================
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
+# =========================================================
 # DEFAULT PRIMARY KEY
 # =========================================================
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
@@ -181,6 +214,12 @@ CELERY_RESULT_BACKEND = os.getenv(
     "CELERY_RESULT_BACKEND",
     "redis://localhost:6379/0"
 )
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60
+CELERY_RESULT_EXPIRES = 3600
 
 ENABLE_PERIODIC_TASKS = os.getenv(
     "ENABLE_PERIODIC_TASKS",
@@ -200,6 +239,12 @@ if ENABLE_PERIODIC_TASKS:
             "schedule": 300.0,
         },
     }
+
+# =========================================================
+# TESTS
+# =========================================================
+TEST_RUNNER = 'django.test.runner.DiscoverRunner'
+TESTS_DIR = BASE_DIR / 'tests'
 
 # =========================================================
 # PERFORMANCE / ML SAFETY
@@ -223,18 +268,49 @@ if not USE_POSTGRES:
         print("SQLite WAL setup skipped:", e)
 
 # =========================================================
-# LOGGING
+# LOGGING (IMPROVED)
 # =========================================================
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{levelname} {asctime} {module} {process:d} {thread:d} {message}",
+            "style": "{",
+        },
+        "simple": {
+            "format": "{levelname} {message}",
+            "style": "{",
+        },
+    },
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
+            "formatter": "simple" if DEBUG else "verbose",
+        },
+        "file": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": BASE_DIR / "logs/django.log",
+            "maxBytes": 1024*1024*5,  # 5MB
+            "backupCount": 5,
+            "formatter": "verbose",
         },
     },
     "root": {
         "handlers": ["console"],
         "level": "INFO",
     },
+    "loggers": {
+        "django": {
+            "handlers": ["console", "file"] if not DEBUG else ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "dashboard": {
+            "handlers": ["console", "file"],
+            "level": "DEBUG" if DEBUG else "INFO",
+            "propagate": False,
+        },
+    },
 }
+
